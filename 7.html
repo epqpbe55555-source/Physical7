@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Smart — Solutions of Electrolytes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-0:#081014;
+    --bg-1:#0E1B20;
+    --bg-2:#12262D;
+    --bg-3:#173039;
+    --line:rgba(232,242,241,0.09);
+    --line-strong:rgba(232,242,241,0.18);
+    --text-0:#EAF2F1;
+    --text-1:#AEC0C1;
+    --text-2:#77898B;
+    --cation:#FF7A59;
+    --cation-soft:rgba(255,122,89,0.14);
+    --anion:#38D9C9;
+    --anion-soft:rgba(56,217,201,0.14);
+    --amber:#F2C744;
+    --amber-soft:rgba(242,199,68,0.14);
+    --bad:#FF5D6C;
+    --good:#4CD787;
+    --radius:14px;
+    --disp: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg-0);
+    color:var(--text-0);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--anion-soft);color:var(--text-0);}
+
+  /* ---------- Header ---------- */
+  header{
+    position:relative;
+    overflow:hidden;
+    padding:56px 24px 40px;
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(255,122,89,0.10), transparent 55%),
+      radial-gradient(ellipse at 85% 0%, rgba(56,217,201,0.12), transparent 55%),
+      var(--bg-1);
+  }
+  #ionCanvas{
+    position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0.75;
+  }
+  .header-inner{ position:relative; max-width:1080px; margin:0 auto; text-align:center; }
+  .eyebrow{
+    font-family:var(--mono); letter-spacing:.18em; text-transform:uppercase;
+    font-size:11px; color:var(--anion); margin:0 0 14px;
+  }
+  .eyebrow::before{content:'⊕ '; color:var(--cation);}
+  .eyebrow::after{content:' ⊖'; color:var(--anion);}
+  h1.title{
+    font-family:var(--disp); font-weight:700; font-size:clamp(38px,7vw,68px);
+    margin:0; letter-spacing:-0.02em;
+    background:linear-gradient(100deg,var(--cation) 0%, var(--text-0) 32%, var(--anion) 78%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{
+    font-size:15px; color:var(--text-1); margin:14px auto 0; max-width:520px;
+    font-family:var(--body);
+  }
+
+  /* ---------- Nav ---------- */
+  nav{
+    position:sticky; top:0; z-index:30;
+    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+    padding:14px 16px; background:rgba(8,16,20,0.86); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .tab-btn{
+    font-family:var(--disp); font-weight:600; font-size:13.5px;
+    padding:9px 18px; border-radius:999px; border:1px solid var(--line);
+    background:transparent; color:var(--text-1); cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:all .18s ease;
+  }
+  .tab-btn .n{ font-family:var(--mono); font-size:10.5px; opacity:.7; }
+  .tab-btn:hover{ border-color:var(--line-strong); color:var(--text-0); }
+  .tab-btn.active{
+    background:linear-gradient(100deg, var(--cation-soft), var(--anion-soft));
+    border-color:var(--line-strong); color:var(--text-0);
+  }
+
+  main{ max-width:1080px; margin:0 auto; padding:44px 20px 90px; }
+  section.panel{ display:none; animation:fade .35s ease; }
+  section.panel.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .sec-head{ margin-bottom:26px; }
+  .sec-head h2{
+    font-family:var(--disp); font-size:clamp(24px,4vw,32px); margin:0 0 8px; letter-spacing:-.01em;
+  }
+  .sec-head p{ color:var(--text-1); font-size:14px; margin:0; max-width:640px; }
+
+  /* ---------- Overview ---------- */
+  .grid{ display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+  .card{
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line); border-radius:var(--radius); padding:20px;
+  }
+  .card h3{
+    font-family:var(--disp); font-size:15.5px; margin:0 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .dot.c{ background:var(--cation); box-shadow:0 0 10px var(--cation); }
+  .dot.a{ background:var(--anion); box-shadow:0 0 10px var(--anion); }
+  .dot.g{ background:var(--amber); box-shadow:0 0 10px var(--amber); }
+  .card ul{ margin:0; padding-left:18px; font-size:13.5px; color:var(--text-1); }
+  .card li{ margin-bottom:6px; }
+  .card li b{ color:var(--text-0); font-weight:600; }
+  .eq{
+    font-family:var(--mono); background:var(--bg-3); border:1px solid var(--line);
+    border-radius:8px; padding:8px 10px; margin:8px 0; font-size:13px; color:var(--amber);
+    display:inline-block;
+  }
+  .formula-sheet{
+    margin-top:20px; padding:22px; border-radius:var(--radius);
+    border:1px solid var(--line-strong); background:var(--bg-2);
+  }
+  .formula-sheet h3{ font-family:var(--disp); margin:0 0 14px; font-size:16px; }
+  .formula-grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
+  .formula-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--bg-3); border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+  }
+  .formula-row .label{ font-size:12px; color:var(--text-1); }
+  .formula-row .val{ font-family:var(--mono); font-size:13.5px; color:var(--anion); }
+  .itable{ width:100%; border-collapse:collapse; margin-top:14px; font-size:13px; }
+  .itable th,.itable td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  .itable th{ color:var(--text-2); font-weight:500; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .itable td.v{ font-family:var(--mono); color:var(--amber); }
+
+  /* ---------- Diagrams ---------- */
+  .diag-grid{ display:grid; gap:18px; grid-template-columns:1fr; }
+  .diag-card{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:var(--radius); padding:20px;
+  }
+  .diag-card h3{ font-family:var(--disp); font-size:16px; margin:0 0 4px; }
+  .diag-card .note{ font-size:12.5px; color:var(--text-2); margin:0 0 14px; }
+  .calc-row{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
+  .field{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-1); min-width:120px; flex:1; }
+  .field input, .field select{
+    background:var(--bg-3); border:1px solid var(--line); color:var(--text-0);
+    border-radius:8px; padding:9px 10px; font-family:var(--mono); font-size:13.5px;
+  }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--anion); }
+  .result-box{
+    background:linear-gradient(100deg,var(--cation-soft),var(--anion-soft));
+    border:1px solid var(--line-strong); border-radius:10px; padding:14px 16px;
+    font-family:var(--mono); font-size:14.5px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+  }
+  .result-box .r-label{ font-size:11px; color:var(--text-1); text-transform:uppercase; letter-spacing:.06em; font-family:var(--body); }
+  .result-box .r-val{ color:var(--amber); font-size:19px; font-weight:600; }
+  .ion-rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .ion-row{ display:flex; gap:8px; align-items:center; }
+  .ion-row input{ flex:1; }
+  .ion-row button{
+    background:transparent; border:1px solid var(--line); color:var(--bad); border-radius:8px;
+    width:32px; height:32px; cursor:pointer; font-size:15px;
+  }
+  .btn{
+    font-family:var(--disp); font-weight:600; font-size:13px; cursor:pointer;
+    border-radius:8px; padding:9px 16px; border:1px solid var(--line-strong);
+    background:var(--bg-3); color:var(--text-0); transition:all .15s ease;
+  }
+  .btn:hover{ border-color:var(--anion); color:var(--anion); }
+  .btn.primary{ background:linear-gradient(100deg,var(--cation),var(--anion)); color:#081014; border:none; }
+  .btn.primary:hover{ opacity:.88; color:#081014; }
+  canvas.chart-canvas{ max-height:320px; }
+  .legend-hint{ font-size:11.5px; color:var(--text-2); margin-top:8px; }
+
+  /* ---------- Mini map ---------- */
+  .map-wrap{ display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .map-circle{
+    position:relative; width:min(92vw,440px); aspect-ratio:1/1; flex:none; margin:0 auto;
+  }
+  .map-circle svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .map-node{
+    position:absolute; transform:translate(-50%,-50%);
+    background:var(--bg-2); border:1px solid var(--line-strong); border-radius:999px;
+    padding:9px 13px; font-size:11.5px; font-family:var(--disp); font-weight:600;
+    cursor:pointer; white-space:nowrap; color:var(--text-1); transition:all .18s ease; z-index:2;
+  }
+  .map-node:hover{ color:var(--text-0); border-color:var(--anion); }
+  .map-node.active{
+    background:linear-gradient(100deg,var(--cation),var(--anion)); color:#081014; border-color:transparent;
+  }
+  .map-node.hub{
+    background:var(--bg-3); color:var(--text-0); font-size:12.5px; padding:14px 18px;
+    border-color:var(--amber);
+  }
+  .map-panel{
+    flex:1; min-width:260px; background:var(--bg-2); border:1px solid var(--line);
+    border-radius:var(--radius); padding:22px; min-height:260px;
+  }
+  .map-panel h3{ font-family:var(--disp); margin:0 0 10px; font-size:17px; color:var(--anion); }
+  .map-panel p{ font-size:13.5px; color:var(--text-1); margin:0 0 10px; }
+  .map-panel .ph{ color:var(--text-2); font-size:13px; font-style:italic; }
+
+  /* ---------- Flash cards ---------- */
+  .fc-wrap{ max-width:560px; margin:0 auto; }
+  .fc-scene{ perspective:1400px; height:280px; }
+  .fc-card{
+    position:relative; width:100%; height:100%; transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1); cursor:pointer;
+  }
+  .fc-card.flipped{ transform:rotateY(180deg); }
+  .fc-face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:var(--radius);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:30px; border:1px solid var(--line-strong);
+  }
+  .fc-front{ background:linear-gradient(160deg,var(--bg-2),var(--bg-3)); }
+  .fc-back{ background:linear-gradient(160deg,var(--cation-soft),var(--anion-soft)); transform:rotateY(180deg); }
+  .fc-face .tag{ position:absolute; top:14px; left:18px; font-family:var(--mono); font-size:10.5px; color:var(--text-2); text-transform:uppercase; letter-spacing:.08em; }
+  .fc-face .txt{ font-family:var(--disp); font-size:19px; font-weight:600; line-height:1.4; }
+  .fc-back .txt{ font-family:var(--body); font-weight:400; font-size:14.5px; }
+  .fc-controls{ display:flex; justify-content:center; align-items:center; gap:12px; margin-top:18px; }
+  .fc-counter{ font-family:var(--mono); font-size:12.5px; color:var(--text-2); min-width:52px; text-align:center; }
+  .fc-hint{ text-align:center; font-size:12px; color:var(--text-2); margin-top:10px; }
+
+  /* ---------- Quiz ---------- */
+  .quiz-top{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .score-pill{
+    font-family:var(--mono); font-size:13px; background:var(--bg-2); border:1px solid var(--line-strong);
+    padding:8px 16px; border-radius:999px; color:var(--amber);
+  }
+  .q-card{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:14px;
+  }
+  .q-num{ font-family:var(--mono); font-size:11px; color:var(--anion); margin-bottom:6px; display:block; }
+  .q-text{ font-family:var(--disp); font-size:15px; margin-bottom:14px; font-weight:600; }
+  .opt{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+    border:1px solid var(--line); margin-bottom:8px; cursor:pointer; font-size:13.5px;
+    color:var(--text-1); transition:all .15s ease;
+  }
+  .opt:hover{ border-color:var(--line-strong); color:var(--text-0); }
+  .opt .k{ font-family:var(--mono); color:var(--text-2); width:18px; flex:none; }
+  .opt.correct{ border-color:var(--good); background:rgba(76,215,135,.1); color:var(--text-0); }
+  .opt.wrong{ border-color:var(--bad); background:rgba(255,93,108,.1); color:var(--text-0); }
+  .opt.disabled{ pointer-events:none; }
+  .quiz-footer{ display:flex; justify-content:center; gap:12px; margin-top:20px; }
+
+  footer{
+    text-align:center; padding:34px 20px 44px; color:var(--text-2); font-size:12.5px;
+    border-top:1px solid var(--line); font-family:var(--mono);
+  }
+  footer .ions{ color:var(--cation); }
+  footer .ions2{ color:var(--anion); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <canvas id="ionCanvas"></canvas>
+  <div class="header-inner">
+    <p class="eyebrow">Physical Pharmacy</p>
+    <h1 class="title">Study Smart</h1>
+    <p class="subtitle">Solutions of Electrolytes — laws, calculators, a topic map, flash cards and a full quiz bank in one place.</p>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="overview"><span class="n">01</span> Overview</button>
+  <button class="tab-btn" data-tab="diagrams"><span class="n">02</span> Diagrams</button>
+  <button class="tab-btn" data-tab="map"><span class="n">03</span> Mini Map</button>
+  <button class="tab-btn" data-tab="cards"><span class="n">04</span> Flash Cards</button>
+  <button class="tab-btn" data-tab="quiz"><span class="n">05</span> Quiz Bank</button>
+</nav>
+
+<main>
+
+  <!-- ========================= 1. OVERVIEW ========================= -->
+  <section class="panel active" id="overview">
+    <div class="sec-head">
+      <h2>Overview</h2>
+      <p>The core laws and definitions only — no long lecture. Use this as your final revision sheet.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3><span class="dot c"></span>Electrolytes</h3>
+        <ul>
+          <li>Substances that form <b>ions</b> in solution and <b>conduct electric current</b>.</li>
+          <li><b>Strong:</b> completely ionized (HCl, Na₂SO₄).</li>
+          <li><b>Weak:</b> small degree of ionization (ephedrine, phenobarbital).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot a"></span>Classes of Strong Electrolytes</h3>
+        <ul>
+          <li><b>Soluble salts</b> — e.g. NaCl</li>
+          <li><b>Strong acids</b> — HCl, HNO₃, H₂SO₄</li>
+          <li><b>Strong bases</b> — NaOH, KOH</li>
+          <li>Weak electrolytes: weak acids (acetic acid), weak bases (NH₄OH)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot g"></span>Electrolysis</h3>
+        <ul>
+          <li><b>Cathode:</b> electrons combine with cations.</li>
+          <li><b>Anode:</b> anions discharge electrons.</li>
+          <li><b>Reduction</b> = addition of electrons.</li>
+          <li><b>Oxidation</b> = removal of electrons.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot c"></span>Osmotic Pressure</h3>
+        <ul>
+          <li>Non-electrolytes: <span class="eq">π = RTc</span></li>
+          <li>Electrolytes need a correction factor <b>i</b> (van't Hoff factor):</li>
+          <li><span class="eq">π = iRTc</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot a"></span>The i Factor</h3>
+        <ul>
+          <li>Non-electrolytes → <b>i ≈ 1</b></li>
+          <li>Strong electrolytes → i tends toward the <b>number of ions formed</b>.</li>
+          <li>NaCl, CaSO₄ → 2 &nbsp; K₂SO₄, CaCl₂ → 3 &nbsp; FeCl₃ → 4</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot g"></span>Interionic Attraction</h3>
+        <ul>
+          <li>Negligible in dilute solutions, significant at moderate/high concentration.</li>
+          <li>Ions associate into <b>ion pairs</b> (Na⁺Cl⁻) and <b>triplets</b> (Na⁺Cl⁻Na⁺).</li>
+          <li>Result: real i is <b>less than</b> the theoretical i.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot c"></span>Activity &amp; Activity Coefficient</h3>
+        <ul>
+          <li>Effective concentration = <b>activity (a)</b>.</li>
+          <li>At infinite dilution: <span class="eq">a = m</span>, ratio a/m = 1.</li>
+          <li>Practical coefficients: <span class="eq">a = γₘm</span>, <span class="eq">a = γcc</span></li>
+          <li>Rational coefficient (mole fraction): <span class="eq">a = γₓX</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot a"></span>Activity of the Solvent</h3>
+        <ul>
+          <li>Infinitely dilute solution → <span class="eq">X₁ = 1 = a</span></li>
+          <li>Volatile solvent: <span class="eq">a₁ = p₁/p°</span></li>
+          <li>Ratio of vapor pressure in solution to pure solvent.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot g"></span>Ionic Strength (μ)</h3>
+        <ul>
+          <li><span class="eq">μ = ½ Σ cᵢzᵢ²</span></li>
+          <li>cᵢ = concentration (mol/L) of an ion, zᵢ = its valence.</li>
+          <li>Total μ of a mixture = <b>sum</b> of each electrolyte's μ.</li>
+          <li>Un-ionized weak acid contributes almost nothing to μ.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="formula-sheet">
+      <h3>Formula Sheet — Colligative Properties</h3>
+      <div class="formula-grid">
+        <div class="formula-row"><span class="label">Vapor pressure lowering</span><span class="val">Δp = 0.018·i·p₁°·m</span></div>
+        <div class="formula-row"><span class="label">Osmotic pressure</span><span class="val">π = iRTm</span></div>
+        <div class="formula-row"><span class="label">Freezing point depression</span><span class="val">ΔTf = iKfm</span></div>
+        <div class="formula-row"><span class="label">Boiling point elevation</span><span class="val">ΔTb = iKbm</span></div>
+        <div class="formula-row"><span class="label">Ionic strength</span><span class="val">μ = ½Σcᵢzᵢ²</span></div>
+        <div class="formula-row"><span class="label">Activity of volatile solvent</span><span class="val">a₁ = p₁ / p°</span></div>
+      </div>
+
+      <table class="itable">
+        <thead><tr><th>Worked example</th><th>Given</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Osmotic pressure, 2.0 m NaCl, 20 °C</td><td class="v">i = 1.9</td><td class="v">π = 91.3 atm</td></tr>
+          <tr><td>Boiling point, 0.250 m FeCl₃, Kb = 0.51</td><td class="v">i = 4</td><td class="v">ΔTb = 0.51 °C → Tb = 100.51 °C</td></tr>
+          <tr><td>Ionic strength of 0.010 M KCl</td><td class="v">z = 1,1</td><td class="v">μ = 0.010</td></tr>
+          <tr><td>Ionic strength of 0.010 M BaSO₄</td><td class="v">z = 2,2</td><td class="v">μ = 0.040</td></tr>
+          <tr><td>Ionic strength of 0.010 M Na₂SO₄</td><td class="v">z = 1,2</td><td class="v">μ = 0.030</td></tr>
+          <tr><td>Buffer: 0.3 M K₂HPO₄ + 0.1 M KH₂PO₄</td><td class="v">z = 1,2,1,1</td><td class="v">μ = 1.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========================= 2. DIAGRAMS ========================= -->
+  <section class="panel" id="diagrams">
+    <div class="sec-head">
+      <h2>Interactive Diagrams</h2>
+      <p>Every chart, table and calculator from the lecture — live and adjustable.</p>
+    </div>
+
+    <div class="diag-grid">
+
+      <div class="diag-card">
+        <h3>Mean Activity Coefficient vs √Molality</h3>
+        <p class="note">Click a legend item to isolate a curve. Values are illustrative of the textbook trend for NaCl, CaCl₂ and ZnSO₄.</p>
+        <canvas id="activityChart" class="chart-canvas"></canvas>
+        <p class="legend-hint">Dip = interionic attraction dominates · Rise after the minimum = solvation of ions reduces interionic attraction.</p>
+      </div>
+
+      <div class="diag-card">
+        <h3>i-Factor Reference Table</h3>
+        <p class="note">The van't Hoff factor a strong electrolyte approaches, by number of ions formed.</p>
+        <table class="itable">
+          <thead><tr><th>Electrolyte</th><th>Dissociation</th><th>Ions</th><th>Theoretical i</th></tr></thead>
+          <tbody>
+            <tr><td>NaCl / CaSO₄</td><td class="v">→ 2 ions</td><td class="v">2</td><td class="v">2</td></tr>
+            <tr><td>K₂SO₄ / CaCl₂</td><td class="v">→ 3 ions</td><td class="v">3</td><td class="v">3</td></tr>
+            <tr><td>FeCl₃</td><td class="v">→ 4 ions</td><td class="v">4</td><td class="v">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="diag-card">
+        <h3>Colligative Property Calculator</h3>
+        <p class="note">Pick a property, set i, the constant, and molality — the result updates live.</p>
+        <div class="calc-row">
+          <div class="field">
+            <label>Property</label>
+            <select id="colligProp">
+              <option value="osmotic">Osmotic pressure — π = iRTm</option>
+              <option value="boiling">Boiling point elevation — ΔTb = iKbm</option>
+              <option value="freezing">Freezing point depression — ΔTf = iKfm</option>
+              <option value="vapor">Vapor pressure lowering — Δp = 0.018·i·p1°·m</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-row" id="colligFields"></div>
+        <div class="result-box">
+          <span class="r-label" id="colligLabel">Result</span>
+          <span class="r-val" id="colligResult">—</span>
+        </div>
+      </div>
+
+      <div class="diag-card">
+        <h3>Ionic Strength Builder</h3>
+        <p class="note">Add every ion in solution with its concentration (mol/L) and valence — μ is computed live.</p>
+        <div class="ion-rows" id="ionRows"></div>
+        <div class="calc-row">
+          <button class="btn" id="addIon">+ Add ion</button>
+          <button class="btn" id="presetKCl">Preset: 0.010 M KCl</button>
+          <button class="btn" id="presetBaSO4">Preset: 0.010 M BaSO₄</button>
+          <button class="btn" id="presetBuffer">Preset: phosphate buffer</button>
+        </div>
+        <div class="result-box">
+          <span class="r-label">Ionic strength μ</span>
+          <span class="r-val" id="ionicResult">0.000</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= 3. MINI MAP ========================= -->
+  <section class="panel" id="map">
+    <div class="sec-head">
+      <h2>Mini Map</h2>
+      <p>Click any topic node — its explanation opens in the panel beside the map.</p>
+    </div>
+    <div class="map-wrap">
+      <div class="map-circle" id="mapCircle">
+        <svg viewBox="0 0 100 100" id="mapSvg"></svg>
+      </div>
+      <div class="map-panel" id="mapPanel">
+        <h3 id="mapPanelTitle">Select a node</h3>
+        <p class="ph" id="mapPanelText">Tap any bubble on the map to read its summary here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= 4. FLASH CARDS ========================= -->
+  <section class="panel" id="cards">
+    <div class="sec-head">
+      <h2>Flash Cards</h2>
+      <p>Tap a card to flip it. Covers the full topic, term by term.</p>
+    </div>
+    <div class="fc-wrap">
+      <div class="fc-scene">
+        <div class="fc-card" id="fcCard">
+          <div class="fc-face fc-front">
+            <span class="tag">Term</span>
+            <div class="txt" id="fcFront"></div>
+          </div>
+          <div class="fc-face fc-back">
+            <span class="tag">Definition</span>
+            <div class="txt" id="fcBack"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fc-controls">
+        <button class="btn" id="fcPrev">◂ Prev</button>
+        <span class="fc-counter" id="fcCounter">1 / 24</span>
+        <button class="btn" id="fcNext">Next ▸</button>
+        <button class="btn primary" id="fcShuffle">Shuffle</button>
+      </div>
+      <p class="fc-hint">Click the card itself to flip.</p>
+    </div>
+  </section>
+
+  <!-- ========================= 5. QUIZ BANK ========================= -->
+  <section class="panel" id="quiz">
+    <div class="sec-head">
+      <h2>Quiz Bank</h2>
+      <p>35 questions. Correct-answer position is randomized every time you load or retry.</p>
+    </div>
+    <div class="quiz-top">
+      <span class="score-pill" id="scorePill">Score: 0 / 0</span>
+      <button class="btn primary" id="retryQuiz">Shuffle &amp; Retry</button>
+    </div>
+    <div id="quizList"></div>
+    <div class="quiz-footer">
+      <button class="btn primary" id="gradeQuiz">Grade Quiz</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span class="ions">⊕</span> Study Smart — Solutions of Electrolytes <span class="ions2">⊖</span><br>
+  © <span id="yr"></span> Anmar Taha. All rights reserved.
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* ============ Tabs ============ */
+const tabs = document.querySelectorAll('.tab-btn');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    tabs.forEach(b=>b.classList.remove('active'));
+    panels.forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='diagrams' && !window.__chartDrawn){ drawChart(); window.__chartDrawn = true; }
+  });
+});
+
+/* ============ Ambient ion canvas ============ */
+(function(){
+  const canvas = document.getElementById('ionCanvas');
+  const ctx = canvas.getContext('2d');
+  let w,h,particles=[];
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+  function init(){
+    resize();
+    const count = Math.max(14, Math.floor(w/60));
+    particles = Array.from({length:count}, ()=>({
+      x:Math.random()*w, y:Math.random()*h,
+      vx:(Math.random()-0.5)*0.25, vy:(Math.random()-0.5)*0.25,
+      charge: Math.random() > 0.5 ? 1 : -1,
+      r: 2.4 + Math.random()*1.8
+    }));
+  }
+  function step(){
+    ctx.clearRect(0,0,w,h);
+    for(const p of particles){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>w) p.vx*=-1;
+      if(p.y<0||p.y>h) p.vy*=-1;
+    }
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const dx=a.x-b.x, dy=a.y-b.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<130 && a.charge!==b.charge){
+          ctx.strokeStyle = `rgba(56,217,201,${(1-dist/130)*0.35})`;
+          ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const p of particles){
+      ctx.beginPath();
+      ctx.fillStyle = p.charge>0 ? 'rgba(255,122,89,0.9)' : 'rgba(56,217,201,0.9)';
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    }
+    if(!reduced) requestAnimationFrame(step);
+  }
+  window.addEventListener('resize', init);
+  init();
+  step();
+})();
+
+/* ============ Diagram: activity coefficient chart ============ */
+function drawChart(){
+  const xs = [0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0];
+  const naCl  = [1.00,0.90,0.82,0.76,0.71,0.68,0.66,0.67,0.70,0.75,0.80];
+  const caCl2 = [1.00,0.85,0.68,0.55,0.48,0.50,0.60,0.78,1.05,1.35,1.58];
+  const znSO4 = [0.90,0.45,0.22,0.12,0.08,0.06,0.05,0.045,0.04,0.04,0.04];
+  const ctx = document.getElementById('activityChart').getContext('2d');
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: xs,
+      datasets:[
+        {label:'NaCl', data:naCl, borderColor:'#38D9C9', backgroundColor:'#38D9C9', tension:.35, pointRadius:3},
+        {label:'CaCl₂', data:caCl2, borderColor:'#F2C744', backgroundColor:'#F2C744', tension:.35, pointRadius:3},
+        {label:'ZnSO₄', data:znSO4, borderColor:'#FF7A59', backgroundColor:'#FF7A59', tension:.35, pointRadius:3}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ labels:{ color:'#AEC0C1', font:{family:'IBM Plex Mono', size:11} } },
+        tooltip:{ mode:'index', intersect:false }
+      },
+      scales:{
+        x:{ title:{display:true, text:'√ Molality', color:'#77898B'}, ticks:{color:'#77898B'}, grid:{color:'rgba(255,255,255,0.06)'} },
+        y:{ title:{display:true, text:'Mean activity coefficient γ±', color:'#77898B'}, ticks:{color:'#77898B'}, grid:{color:'rgba(255,255,255,0.06)'} }
+      }
+    }
+  });
+}
+
+/* ============ Diagram: colligative calculator ============ */
+const colligFields = document.getElementById('colligFields');
+const colligProp = document.getElementById('colligProp');
+const colligLabel = document.getElementById('colligLabel');
+const colligResult = document.getElementById('colligResult');
+
+function fieldHTML(id,label,val,step='0.01'){
+  return `<div class="field"><label>${label}</label><input type="number" id="${id}" value="${val}" step="${step}"></div>`;
+}
+function renderColligFields(){
+  const prop = colligProp.value;
+  if(prop==='osmotic'){
+    colligFields.innerHTML = fieldHTML('i','i factor','2') + fieldHTML('R','R (L·atm/mol·K)','0.082') +
+      fieldHTML('T','Temperature (°C)','25') + fieldHTML('m','Molality (m)','1');
+    colligLabel.textContent = 'π (atm)';
+  } else if(prop==='boiling'){
+    colligFields.innerHTML = fieldHTML('i','i factor','2') + fieldHTML('Kb','Kb (°C/mole)','0.51') + fieldHTML('m','Molality (m)','1');
+    colligLabel.textContent = 'ΔTb (°C)';
+  } else if(prop==='freezing'){
+    colligFields.innerHTML = fieldHTML('i','i factor','2') + fieldHTML('Kf','Kf (°C/mole)','1.86') + fieldHTML('m','Molality (m)','1');
+    colligLabel.textContent = 'ΔTf (°C)';
+  } else {
+    colligFields.innerHTML = fieldHTML('i','i factor','2') + fieldHTML('p1','Pure solvent vapor pressure (mmHg)','23.8') + fieldHTML('m','Molality (m)','1');
+    colligLabel.textContent = 'Δp (mmHg)';
+  }
+  colligFields.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', computeColligative));
+  computeColligative();
+}
+function computeColligative(){
+  const prop = colligProp.value;
+  const val = id => parseFloat(document.getElementById(id).value) || 0;
+  let result;
+  if(prop==='osmotic'){
+    const T = val('T') + 273;
+    result = val('i') * val('R') * T * val('m');
+  } else if(prop==='boiling'){
+    result = val('i') * val('Kb') * val('m');
+  } else if(prop==='freezing'){
+    result = val('i') * val('Kf') * val('m');
+  } else {
+    result = 0.018 * val('i') * val('p1') * val('m');
+  }
+  colligResult.textContent = (isFinite(result) ? result.toFixed(3) : '—');
+}
+colligProp.addEventListener('change', renderColligFields);
+renderColligFields();
+
+/* ============ Diagram: ionic strength builder ============ */
+const ionRows = document.getElementById('ionRows');
+const ionicResult = document.getElementById('ionicResult');
+let ionRowId = 0;
+
+function addIonRow(conc=0.01, val=1){
+  const rid = 'ion'+(ionRowId++);
+  const row = document.createElement('div');
+  row.className = 'ion-row';
+  row.innerHTML = `
+    <input type="number" step="0.001" placeholder="Concentration (mol/L)" value="${conc}" data-role="c">
+    <input type="number" step="1" placeholder="Valence z" value="${val}" data-role="z">
+    <button title="Remove">×</button>`;
+  row.querySelectorAll('input').forEach(i=>i.addEventListener('input', computeIonic));
+  row.querySelector('button').addEventListener('click', ()=>{ row.remove(); computeIonic(); });
+  ionRows.appendChild(row);
+}
+function clearIonRows(){ ionRows.innerHTML=''; }
+function computeIonic(){
+  let sum = 0;
+  ionRows.querySelectorAll('.ion-row').forEach(row=>{
+    const c = parseFloat(row.querySelector('[data-role=c]').value) || 0;
+    const z = parseFloat(row.querySelector('[data-role=z]').value) || 0;
+    sum += c * z * z;
+  });
+  ionicResult.textContent = (sum/2).toFixed(3);
+}
+document.getElementById('addIon').addEventListener('click', ()=>addIonRow());
+document.getElementById('presetKCl').addEventListener('click', ()=>{ clearIonRows(); addIonRow(0.01,1); addIonRow(0.01,1); computeIonic(); });
+document.getElementById('presetBaSO4').addEventListener('click', ()=>{ clearIonRows(); addIonRow(0.01,2); addIonRow(0.01,2); computeIonic(); });
+document.getElementById('presetBuffer').addEventListener('click', ()=>{
+  clearIonRows();
+  addIonRow(0.6,1);  // K+ from K2HPO4 (0.3*2)
+  addIonRow(0.3,2);  // HPO4 2-
+  addIonRow(0.1,1);  // K+ from KH2PO4
+  addIonRow(0.1,1);  // H2PO4-
+  computeIonic();
+});
+addIonRow(0.01,1); addIonRow(0.01,1);
+computeIonic();
+
+/* ============ Mini map ============ */
+const mapNodes = [
+  {id:'hub', hub:true, angle:0, r:0, title:'Solutions of Electrolytes',
+    text:'Substances that form ions in solution and conduct electric current. Divided into strong electrolytes (completely ionized: soluble salts, strong acids, strong bases) and weak electrolytes (partially ionized: weak acids, weak bases).'},
+  {id:'sw', angle:-90, r:38, title:'Strong vs Weak',
+    text:'Strong electrolytes are completely ionized in water and conduct current efficiently (NaCl, HCl, NaOH). Weak electrolytes show only a small degree of ionization and produce a weak current (acetic acid, NH₄OH).'},
+  {id:'elec', angle:-45, r:38, title:'Electrolysis',
+    text:'A direct current through an electrolytic cell drives a chemical reaction. Cations gain electrons at the cathode (reduction); anions carry and discharge electrons at the anode (oxidation). Current = flow of + and − ions toward the electrodes.'},
+  {id:'collig', angle:0, r:38, title:'Colligative Properties & i',
+    text:'Non-electrolytes: π = RTc. Electrolytes give higher-than-expected colligative values, corrected with the van\'t Hoff factor i: π = iRTc. The same i multiplies ΔTb = iKbm, ΔTf = iKfm and Δp = 0.018·i·p1°·m.'},
+  {id:'ifactor', angle:45, r:38, title:'Van\'t Hoff Factor Table',
+    text:'i is close to the number of ions a strong electrolyte forms: NaCl & CaSO₄ → 2, K₂SO₄ & CaCl₂ → 3, FeCl₃ → 4. Real (calculated) i is usually a little less than this theoretical value.'},
+  {id:'inter', angle:90, r:38, title:'Interionic Attraction',
+    text:'At moderate/high concentration, oppositely charged ions attract one another and associate into ion pairs (Na⁺Cl⁻) or triplets (Na⁺Cl⁻Na⁺). The electrolyte is fully ionized but not fully dissociated into free ions — i is less than 2 for a 1:1 salt.'},
+  {id:'activity', angle:135, r:38, title:'Activity & Activity Coefficient',
+    text:'Because some ions are "taken out of play," the effective concentration (activity, a) is less than the actual concentration. a = γₘm (molal), a = γcc (molar), a = γₓX (mole fraction). γ approaches 1 with increasing dilution, dips due to interionic attraction, then rises again due to solvation.'},
+  {id:'solvent', angle:180, r:38, title:'Activity of the Solvent',
+    text:'At infinite dilution the solvent is essentially pure, so a = X₁ = 1. For a volatile solvent, activity is the ratio of the vapor pressure over the solution to that of the pure solvent: a₁ = p₁ / p°.'},
+  {id:'ionic', angle:-135, r:38, title:'Ionic Strength (μ)',
+    text:'μ = ½ Σ cᵢzᵢ², summed over every ion in solution. Un-ionized weak acid contributes almost nothing. The total ionic strength of a mixture of electrolytes is the sum of each electrolyte\'s individual μ.'}
+];
+
+function polarPercent(angleDeg, rPercent){
+  const rad = angleDeg * Math.PI/180;
+  return { x: 50 + rPercent*Math.cos(rad), y: 50 + rPercent*Math.sin(rad) };
+}
+
+function buildMap(){
+  const svg = document.getElementById('mapSvg');
+  const circle = document.getElementById('mapCircle');
+  svg.innerHTML = '';
+  circle.querySelectorAll('.map-node').forEach(n=>n.remove());
+
+  const hub = mapNodes.find(n=>n.hub);
+  const hubPos = {x:50,y:50};
+
+  mapNodes.filter(n=>!n.hub).forEach(n=>{
+    const pos = polarPercent(n.angle, n.r);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', hubPos.x); line.setAttribute('y1', hubPos.y);
+    line.setAttribute('x2', pos.x); line.setAttribute('y2', pos.y);
+    line.setAttribute('stroke','rgba(232,242,241,0.14)');
+    line.setAttribute('stroke-width','0.4');
+    svg.appendChild(line);
+  });
+
+  mapNodes.forEach(n=>{
+    const pos = n.hub ? hubPos : polarPercent(n.angle, n.r);
+    const el = document.createElement('div');
+    el.className = 'map-node' + (n.hub ? ' hub' : '');
+    el.style.left = pos.x + '%';
+    el.style.top = pos.y + '%';
+    el.textContent = n.title;
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.map-node').forEach(m=>m.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('mapPanelTitle').textContent = n.title;
+      document.getElementById('mapPanelText').innerHTML = n.text;
+      document.getElementById('mapPanelText').classList.remove('ph');
+    });
+    circle.appendChild(el);
+  });
+}
+buildMap();
+
+/* ============ Flash cards ============ */
+const flashcards = [
+  {f:'Electrolyte', b:'A substance that forms ions in solution and conducts electric current.'},
+  {f:'Strong electrolyte', b:'Completely ionized in water; conducts current efficiently (e.g. NaCl, HCl, NaOH).'},
+  {f:'Weak electrolyte', b:'Shows only a small degree of ionization in water (e.g. acetic acid, NH₄OH).'},
+  {f:'Cathode reaction', b:'Electrons entering from the battery combine with cations (reduction occurs here).'},
+  {f:'Anode reaction', b:'Anions carry electrons through the solution and discharge them here (oxidation occurs here).'},
+  {f:'Reduction', b:'The addition of electrons to a chemical species.'},
+  {f:'Oxidation', b:'The removal of electrons from a chemical species.'},
+  {f:'Osmotic pressure (non-electrolyte)', b:'π = RTc — depends only on the concentration of solute particles.'},
+  {f:'Osmotic pressure (electrolyte)', b:'π = iRTc — corrected with the van\'t Hoff factor i because electrolytes give higher pressures than expected.'},
+  {f:'Van\'t Hoff factor (i)', b:'A correction factor; ≈1 for non-electrolytes and tends toward the number of ions formed for strong electrolytes.'},
+  {f:'i for NaCl / CaSO₄', b:'Approaches 2 (two ions on dissociation).'},
+  {f:'i for K₂SO₄ / CaCl₂', b:'Approaches 3 (three ions on dissociation).'},
+  {f:'i for FeCl₃', b:'Approaches 4 (four ions on dissociation).'},
+  {f:'2.0 m NaCl at 20 °C', b:'Real i ≈ 1.9 (less than the theoretical 2), giving π ≈ 91.3 atm.'},
+  {f:'Boiling point elevation', b:'ΔTb = iKbm — e.g. 0.250 m FeCl₃ (i=4, Kb=0.51) gives ΔTb = 0.51 °C, so Tb = 100.51 °C.'},
+  {f:'Freezing point depression', b:'ΔTf = iKfm.'},
+  {f:'Vapor pressure lowering', b:'Δp = 0.018 · i · p1° · m.'},
+  {f:'Ion pairs / triplets', b:'At high concentration, ions associate: Na⁺Cl⁻ (pair) or Na⁺Cl⁻Na⁺ (triplet) — reduces full ionic effect, so i < theoretical.'},
+  {f:'Activity (a)', b:'The "effective concentration" of a solute or ion, generally less than the true concentration due to interionic attraction.'},
+  {f:'Activity at infinite dilution', b:'a = m (ions so widely separated they do not interact); the ratio a/m = 1.'},
+  {f:'Practical activity coefficient (γm)', b:'a = γₘ·m on the molal scale (also γc·c on the molar scale).'},
+  {f:'Rational activity coefficient (γx)', b:'a = γₓ·X, on the mole-fraction scale.'},
+  {f:'Activity coefficient trend', b:'Approaches 1 with dilution, dips due to interionic attraction, then rises again at high concentration due to solvation of ions.'},
+  {f:'Activity of the solvent', b:'At infinite dilution a = X₁ = 1; more concentrated solutions give a = γₓX₁.'},
+  {f:'Activity of a volatile solvent', b:'a₁ = p₁ / p° — ratio of the solution\'s vapor pressure to that of the pure solvent.'},
+  {f:'Ionic strength (μ)', b:'μ = ½ Σ cᵢzᵢ² — summed over all ions, ci = concentration (mol/L), zi = valence.'},
+  {f:'Ionic strength of a mixture', b:'Equal to the sum of the ionic strengths of each individual electrolyte present.'},
+  {f:'Weak acid & ionic strength', b:'Un-ionized weak acid molecules contribute essentially nothing to the ionic strength.'}
+];
+let fcOrder = flashcards.map((_,i)=>i);
+let fcIndex = 0;
+
+function renderCard(){
+  const card = flashcards[fcOrder[fcIndex]];
+  document.getElementById('fcFront').textContent = card.f;
+  document.getElementById('fcBack').textContent = card.b;
+  document.getElementById('fcCounter').textContent = (fcIndex+1) + ' / ' + flashcards.length;
+  document.getElementById('fcCard').classList.remove('flipped');
+}
+document.getElementById('fcCard').addEventListener('click', ()=>{
+  document.getElementById('fcCard').classList.toggle('flipped');
+});
+document.getElementById('fcNext').addEventListener('click', ()=>{
+  fcIndex = (fcIndex+1) % flashcards.length; renderCard();
+});
+document.getElementById('fcPrev').addEventListener('click', ()=>{
+  fcIndex = (fcIndex-1+flashcards.length) % flashcards.length; renderCard();
+});
+document.getElementById('fcShuffle').addEventListener('click', ()=>{
+  for(let i=fcOrder.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [fcOrder[i],fcOrder[j]]=[fcOrder[j],fcOrder[i]]; }
+  fcIndex = 0; renderCard();
+});
+renderCard();
+
+/* ============ Quiz bank ============ */
+const quizBank = [
+  {q:'What is an electrolyte?', opts:['A substance that forms ions in solution and conducts current','A substance that never dissolves in water','A pure organic compound','A gas that has no charge'], a:0},
+  {q:'A strong electrolyte is one that is:', opts:['Partially ionized','Completely ionized in water','Never ionized','Only ionized in oil'], a:1},
+  {q:'Which of these is a weak electrolyte?', opts:['NaCl','HCl','Acetic acid','NaOH'], a:2},
+  {q:'Which is NOT one of the three classes of strong electrolytes?', opts:['Soluble salts','Strong acids','Weak bases','Strong bases'], a:2},
+  {q:'NH₄OH is an example of a:', opts:['Strong acid','Weak base','Strong base','Soluble salt'], a:1},
+  {q:'During electrolysis, cations move toward the:', opts:['Anode','Cathode','Separator','Salt bridge'], a:1},
+  {q:'Anions discharge their electrons at the:', opts:['Cathode','Anode','Membrane','Battery'], a:1},
+  {q:'Reduction is defined as:', opts:['Removal of electrons','Addition of electrons','Loss of protons','Gain of protons'], a:1},
+  {q:'Oxidation is defined as:', opts:['Addition of electrons','Removal of electrons','Addition of protons','Loss of neutrons'], a:1},
+  {q:'The osmotic pressure equation for a dilute non-electrolyte solution is:', opts:['π = iRTc','π = RTc','π = Kb·m','π = γ·c'], a:1},
+  {q:'The corrected osmotic pressure equation for electrolytes is:', opts:['π = RTc','π = iRTc','π = Kf·m','π = X₁'], a:1},
+  {q:'The van\'t Hoff factor i for a non-electrolyte is approximately:', opts:['0','1','2','4'], a:1},
+  {q:'The theoretical i factor for NaCl approaches:', opts:['1','2','3','4'], a:1},
+  {q:'The theoretical i factor for K₂SO₄ approaches:', opts:['2','3','4','1'], a:1},
+  {q:'The theoretical i factor for FeCl₃ approaches:', opts:['2','3','4','5'], a:2},
+  {q:'For a 2.0 m NaCl solution at 20 °C, the real (calculated) i factor is about:', opts:['1.0','1.9','2.5','3.0'], a:1},
+  {q:'The osmotic pressure of 2.0 m NaCl at 20 °C is approximately:', opts:['45.6 atm','91.3 atm','182.6 atm','9.13 atm'], a:1},
+  {q:'The correct equation for boiling point elevation of an electrolyte is:', opts:['ΔTb = Kb·m','ΔTb = iKbm','ΔTb = iKfm','ΔTb = 0.018ip1°m'], a:1},
+  {q:'The correct equation for freezing point depression of an electrolyte is:', opts:['ΔTf = iKfm','ΔTf = iKbm','ΔTf = RTc','ΔTf = γm'], a:0},
+  {q:'For a 0.250 m FeCl₃ solution, the van\'t Hoff factor i equals:', opts:['2','3','4','1'], a:2},
+  {q:'For 0.250 m FeCl₃ with Kb = 0.51 °C/mole, ΔTb equals:', opts:['0.51 °C','1.02 °C','0.128 °C','2.04 °C'], a:0},
+  {q:'The boiling point of that 0.250 m FeCl₃ solution is:', opts:['100.00 °C','100.51 °C','101.02 °C','99.49 °C'], a:1},
+  {q:'As electrolyte concentration increases, interionic attraction becomes:', opts:['Negligible','Significant','Reversed','Unchanged'], a:1},
+  {q:'Na⁺Cl⁻ existing together at high concentration is an example of a(n):', opts:['Ion triplet','Ion pair','Free ion','Colloid'], a:1},
+  {q:'If the calculated i factor is less than the theoretical i factor, this indicates:', opts:['Complete dissociation','Ion association','No ionization occurred','An error in measurement only'], a:1},
+  {q:'The "effective concentration" of ions in solution is called:', opts:['Molarity','Activity','Normality','Ionic strength'], a:1},
+  {q:'At infinite dilution, the activity of an ion equals its:', opts:['Square root of concentration','Concentration','Valence','Ionic strength'], a:1},
+  {q:'The practical activity coefficient on the molal scale is written as:', opts:['γₓ','γc','γₘ','i'], a:2},
+  {q:'The rational activity coefficient is defined by the equation:', opts:['a = γₘm','a = γcc','a = γₓX','a = iRTc'], a:2},
+  {q:'After passing through a minimum, the activity coefficient of an electrolyte like CaCl₂ tends to:', opts:['Stay at zero','Rise again due to solvation','Fall to a negative value','Remain exactly at the minimum'], a:1},
+  {q:'In the activity-coefficient vs √molality plot, which electrolyte shows the steepest rise at high concentration?', opts:['ZnSO₄','NaCl','CaCl₂','None of them rise'], a:2},
+  {q:'The activity of a volatile solvent is given by:', opts:['a₁ = p₁/p°','a₁ = p°/p₁','a₁ = iRTc','a₁ = Kb·m'], a:0},
+  {q:'Water vapor pressure over a sucrose solution is 17.38 mm vs 17.54 mm pure water; the activity of water is about:', opts:['0.500','0.991','1.009','0.879'], a:1},
+  {q:'If the vapor pressure of water over a drug solution is 721 mmHg at 100 °C (pure water = 760 mmHg), the activity of water is about:', opts:['0.949','1.054','0.500','0.879'], a:0},
+  {q:'The general ionic strength equation is:', opts:['μ = Σcᵢ','μ = ½Σcᵢzᵢ²','μ = iRTc','μ = γₓX'], a:1},
+  {q:'The ionic strength of 0.010 M KCl is:', opts:['0.005','0.010','0.020','0.040'], a:1},
+  {q:'The ionic strength of 0.010 M BaSO₄ is:', opts:['0.010','0.020','0.040','0.080'], a:2},
+  {q:'The ionic strength of 0.010 M Na₂SO₄ is:', opts:['0.010','0.020','0.030','0.060'], a:2},
+  {q:'Un-ionized salicylic acid molecules in solution:', opts:['Double the ionic strength','Contribute almost nothing to ionic strength','Are the main contributor to ionic strength','Cannot exist in water'], a:1},
+  {q:'The total ionic strength of a mixture of several electrolytes equals:', opts:['The average of each μ','The sum of each electrolyte\'s μ','Only the μ of the strongest electrolyte','The product of all μ values'], a:1},
+  {q:'For a buffer of 0.3 M K₂HPO₄ and 0.1 M KH₂PO₄, the calculated ionic strength is:', opts:['0.4','0.7','1.0','1.3'], a:2},
+  {q:'The valence (z) used for HPO₄²⁻ in an ionic strength calculation is:', opts:['1','2','3','0'], a:1}
+];
+
+let quizState = [];
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function buildQuiz(){
+  const order = shuffleArray(quizBank.map((_,i)=>i));
+  quizState = order.map(idx=>{
+    const item = quizBank[idx];
+    const optIdx = shuffleArray(item.opts.map((_,i)=>i));
+    const options = optIdx.map(i=>item.opts[i]);
+    const correct = optIdx.indexOf(item.a);
+    return { q:item.q, options, correct, picked:null };
+  });
+  renderQuiz();
+  updateScorePill();
+}
+
+function renderQuiz(){
+  const list = document.getElementById('quizList');
+  list.innerHTML = '';
+  quizState.forEach((item, qi)=>{
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    const letters = ['A','B','C','D'];
+    card.innerHTML = `
+      <span class="q-num">Question ${qi+1} / ${quizState.length}</span>
+      <div class="q-text">${item.q}</div>
+      <div class="opts"></div>`;
+    const optsWrap = card.querySelector('.opts');
+    item.options.forEach((opt, oi)=>{
+      const el = document.createElement('div');
+      el.className = 'opt';
+      el.innerHTML = `<span class="k">${letters[oi]}</span><span>${opt}</span>`;
+      el.addEventListener('click', ()=>{
+        if(item.picked !== null) return;
+        item.picked = oi;
+        const opts = optsWrap.querySelectorAll('.opt');
+        opts.forEach(o=>o.classList.add('disabled'));
+        opts[item.correct].classList.add('correct');
+        if(oi !== item.correct) opts[oi].classList.add('wrong');
+        updateScorePill();
+      });
+      optsWrap.appendChild(el);
+    });
+    list.appendChild(card);
+  });
+}
+
+function updateScorePill(){
+  const answered = quizState.filter(i=>i.picked!==null).length;
+  const correct = quizState.filter(i=>i.picked===i.correct).length;
+  document.getElementById('scorePill').textContent = `Score: ${correct} / ${answered} answered (${quizState.length} total)`;
+}
+
+document.getElementById('gradeQuiz').addEventListener('click', ()=>{
+  quizState.forEach(item=>{
+    if(item.picked === null) item.picked = -1;
+  });
+  renderQuiz();
+  document.querySelectorAll('.q-card .opt').forEach(o=>o.classList.add('disabled'));
+  document.querySelectorAll('.q-card').forEach((card,qi)=>{
+    const opts = card.querySelectorAll('.opt');
+    const item = quizState[qi];
+    opts[item.correct].classList.add('correct');
+    if(item.picked>=0 && item.picked!==item.correct) opts[item.picked].classList.add('wrong');
+  });
+  updateScorePill();
+});
+document.getElementById('retryQuiz').addEventListener('click', buildQuiz);
+buildQuiz();
+</script>
+</body>
+</html>
