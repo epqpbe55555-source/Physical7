@@ -95,6 +95,20 @@
     border-color:var(--line-strong); color:var(--text-0);
   }
 
+  /* ---------- Difficulty level tabs (Flash Cards / Quiz Bank) ---------- */
+  .level-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+  .level-btn{
+    font-family:var(--disp); font-weight:600; font-size:12.5px;
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:var(--bg-2); color:var(--text-1); cursor:pointer;
+    display:flex; align-items:center; gap:6px; transition:all .18s ease;
+  }
+  .level-btn .n{ font-family:var(--mono); font-size:10px; opacity:.75; }
+  .level-btn:hover{ border-color:var(--line-strong); color:var(--text-0); }
+  .level-btn[data-lvl="easy"].active{ background:linear-gradient(100deg,var(--anion-soft),var(--anion-soft)); border-color:var(--anion); color:var(--text-0); }
+  .level-btn[data-lvl="medium"].active{ background:linear-gradient(100deg,var(--amber-soft),var(--amber-soft)); border-color:var(--amber); color:var(--text-0); }
+  .level-btn[data-lvl="hard"].active{ background:linear-gradient(100deg,var(--cation-soft),var(--cation-soft)); border-color:var(--cation); color:var(--text-0); }
+
   main{ max-width:1080px; margin:0 auto; padding:44px 20px 90px; }
   section.panel{ display:none; animation:fade .35s ease; }
   section.panel.active{ display:block; }
@@ -499,7 +513,12 @@
   <section class="panel" id="cards">
     <div class="sec-head">
       <h2>Flash Cards</h2>
-      <p>Tap a card to flip it. Covers the full topic, term by term.</p>
+      <p>Tap a card to flip it. Three difficulty levels, built to cover every fact in the lecture.</p>
+    </div>
+    <div class="level-tabs" id="fcLevelTabs">
+      <button class="level-btn active" data-lvl="easy"><span class="n">LV.1</span> Easy · 60</button>
+      <button class="level-btn" data-lvl="medium"><span class="n">LV.2</span> Medium · 50</button>
+      <button class="level-btn" data-lvl="hard"><span class="n">LV.3</span> Hard · 40</button>
     </div>
     <div class="fc-wrap">
       <div class="fc-scene">
@@ -528,7 +547,12 @@
   <section class="panel" id="quiz">
     <div class="sec-head">
       <h2>Quiz Bank</h2>
-      <p>35 questions. Correct-answer position is randomized every time you load or retry.</p>
+      <p>Three difficulty levels. Correct-answer position is randomized every time you load or retry.</p>
+    </div>
+    <div class="level-tabs" id="quizLevelTabs">
+      <button class="level-btn active" data-lvl="easy"><span class="n">LV.1</span> Easy · 60</button>
+      <button class="level-btn" data-lvl="medium"><span class="n">LV.2</span> Medium · 50</button>
+      <button class="level-btn" data-lvl="hard"><span class="n">LV.3</span> Hard · 40</button>
     </div>
     <div class="quiz-top">
       <span class="score-pill" id="scorePill">Score: 0 / 0</span>
@@ -800,108 +824,373 @@ function buildMap(){
 }
 buildMap();
 
-/* ============ Flash cards ============ */
-const flashcards = [
-  {f:'Electrolyte', b:'A substance that forms ions in solution and conducts electric current.'},
-  {f:'Strong electrolyte', b:'Completely ionized in water; conducts current efficiently (e.g. NaCl, HCl, NaOH).'},
-  {f:'Weak electrolyte', b:'Shows only a small degree of ionization in water (e.g. acetic acid, NH₄OH).'},
-  {f:'Cathode reaction', b:'Electrons entering from the battery combine with cations (reduction occurs here).'},
-  {f:'Anode reaction', b:'Anions carry electrons through the solution and discharge them here (oxidation occurs here).'},
-  {f:'Reduction', b:'The addition of electrons to a chemical species.'},
-  {f:'Oxidation', b:'The removal of electrons from a chemical species.'},
-  {f:'Osmotic pressure (non-electrolyte)', b:'π = RTc — depends only on the concentration of solute particles.'},
-  {f:'Osmotic pressure (electrolyte)', b:'π = iRTc — corrected with the van\'t Hoff factor i because electrolytes give higher pressures than expected.'},
-  {f:'Van\'t Hoff factor (i)', b:'A correction factor; ≈1 for non-electrolytes and tends toward the number of ions formed for strong electrolytes.'},
-  {f:'i for NaCl / CaSO₄', b:'Approaches 2 (two ions on dissociation).'},
-  {f:'i for K₂SO₄ / CaCl₂', b:'Approaches 3 (three ions on dissociation).'},
-  {f:'i for FeCl₃', b:'Approaches 4 (four ions on dissociation).'},
-  {f:'2.0 m NaCl at 20 °C', b:'Real i ≈ 1.9 (less than the theoretical 2), giving π ≈ 91.3 atm.'},
-  {f:'Boiling point elevation', b:'ΔTb = iKbm — e.g. 0.250 m FeCl₃ (i=4, Kb=0.51) gives ΔTb = 0.51 °C, so Tb = 100.51 °C.'},
-  {f:'Freezing point depression', b:'ΔTf = iKfm.'},
-  {f:'Vapor pressure lowering', b:'Δp = 0.018 · i · p1° · m.'},
-  {f:'Ion pairs / triplets', b:'At high concentration, ions associate: Na⁺Cl⁻ (pair) or Na⁺Cl⁻Na⁺ (triplet) — reduces full ionic effect, so i < theoretical.'},
-  {f:'Activity (a)', b:'The "effective concentration" of a solute or ion, generally less than the true concentration due to interionic attraction.'},
-  {f:'Activity at infinite dilution', b:'a = m (ions so widely separated they do not interact); the ratio a/m = 1.'},
-  {f:'Practical activity coefficient (γm)', b:'a = γₘ·m on the molal scale (also γc·c on the molar scale).'},
-  {f:'Rational activity coefficient (γx)', b:'a = γₓ·X, on the mole-fraction scale.'},
-  {f:'Activity coefficient trend', b:'Approaches 1 with dilution, dips due to interionic attraction, then rises again at high concentration due to solvation of ions.'},
-  {f:'Activity of the solvent', b:'At infinite dilution a = X₁ = 1; more concentrated solutions give a = γₓX₁.'},
-  {f:'Activity of a volatile solvent', b:'a₁ = p₁ / p° — ratio of the solution\'s vapor pressure to that of the pure solvent.'},
-  {f:'Ionic strength (μ)', b:'μ = ½ Σ cᵢzᵢ² — summed over all ions, ci = concentration (mol/L), zi = valence.'},
-  {f:'Ionic strength of a mixture', b:'Equal to the sum of the ionic strengths of each individual electrolyte present.'},
-  {f:'Weak acid & ionic strength', b:'Un-ionized weak acid molecules contribute essentially nothing to the ionic strength.'}
+/* ============ Flash card datasets (Level 1: Easy — 60 cards) ============ */
+const FC_EASY = [
+  {f:"Electrolyte", b:"A substance that forms ions in solution and conducts electric current."},
+  {f:"Strong electrolyte", b:"A substance that is completely ionized when dissolved in water; conducts current very efficiently."},
+  {f:"Weak electrolyte", b:"A substance that exhibits only a small degree of ionization in water, producing relatively few ions."},
+  {f:"Strong electrolyte class: soluble salts", b:"Example given in the lecture: NaCl."},
+  {f:"Strong electrolyte class: strong acids", b:"Examples given: HCl, HNO3, H2SO4."},
+  {f:"Strong electrolyte class: strong bases", b:"Examples given: NaOH, KOH."},
+  {f:"Weak electrolyte examples (drugs)", b:"Ephedrine and phenobarbital."},
+  {f:"Weak acid example", b:"Acetic acid."},
+  {f:"Weak base example", b:"Ammonium hydroxide (NH4OH)."},
+  {f:"Electrolysis", b:"The chemical reaction that occurs when a direct electric current flows through an electrolytic cell."},
+  {f:"What happens at the cathode", b:"Electrons entering from the battery combine with the positive ions (cations) in solution."},
+  {f:"What happens at the anode", b:"The negative ions (anions) carry electrons through the solution and discharge them at the anode."},
+  {f:"Reduction", b:"The addition of electrons to a chemical species."},
+  {f:"Oxidation", b:"The removal of electrons from a chemical species."},
+  {f:"Current in an electrolyte solution", b:"Consists of a flow of positive and negative ions toward the electrodes."},
+  {f:"Osmotic pressure — definition", b:"The minimum pressure that must be applied to a solution to halt the flow of solvent molecules through a semipermeable membrane."},
+  {f:"Osmotic pressure — colligative property?", b:"Yes; it depends on the concentration of solute particles in the solution."},
+  {f:"Osmotic pressure equation for nonelectrolytes", b:"π = RTc"},
+  {f:"R in π = RTc", b:"The gas constant."},
+  {f:"T in π = RTc", b:"The absolute temperature."},
+  {f:"c in π = RTc", b:"The concentration in moles per liter."},
+  {f:"Nonelectrolyte examples used for π = RTc", b:"Sucrose and urea."},
+  {f:"Corrected osmotic pressure equation for electrolytes", b:"π = iRTc"},
+  {f:"i factor", b:"A correction factor introduced to account for the irrational (higher than expected) behavior of ionic solutions."},
+  {f:"i factor for nonelectrolytes", b:"About 1."},
+  {f:"i factor trend for strong electrolytes", b:"Tends toward a value equal to the number of ions formed upon dissociation."},
+  {f:"Theoretical i for NaCl", b:"Approaches 2."},
+  {f:"Theoretical i for CaSO4", b:"Approaches 2."},
+  {f:"Theoretical i for K2SO4", b:"Approaches 3."},
+  {f:"Theoretical i for CaCl2", b:"Approaches 3."},
+  {f:"Theoretical i for FeCl3", b:"Approaches 4."},
+  {f:"Real i factor for 2.0 m NaCl at 20 degC", b:"About 1.9."},
+  {f:"Osmotic pressure of 2.0 m NaCl at 20 degC", b:"91.3 atm."},
+  {f:"Vapor pressure lowering equation", b:"Δp = 0.018 i p1° m"},
+  {f:"Osmotic pressure equation (molality form)", b:"π = iRTm"},
+  {f:"Freezing point depression equation", b:"ΔTf = iKfm"},
+  {f:"Boiling point elevation equation", b:"ΔTb = iKbm"},
+  {f:"FeCl3 dissociation", b:"FeCl3 → Fe+3 + 3Cl-1"},
+  {f:"i used for FeCl3 in the boiling point example", b:"i = 4"},
+  {f:"ΔTb for 0.250 m FeCl3 (Kb = 0.51)", b:"0.51 degC"},
+  {f:"Boiling point of the 0.250 m FeCl3 solution", b:"100.51 degC"},
+  {f:"Interionic attractive forces in dilute solutions", b:"Negligible."},
+  {f:"Interionic attractive forces at moderate concentration", b:"Become significant."},
+  {f:"Ion pair example", b:"Na+Cl- (from NaCl at high concentration)."},
+  {f:"Ion triplet example", b:"Na+Cl-Na+"},
+  {f:"Effect of ion association on the i factor", b:"The real i is less than the theoretical i (i < 2 for NaCl, for example)."},
+  {f:"Activity (a)", b:"The effective concentration of a solute or ion in solution."},
+  {f:"Activity at infinite dilution", b:"a = m, i.e. a/m = 1."},
+  {f:"Practical activity coefficient (molal scale) symbol", b:"γm"},
+  {f:"Practical activity coefficient equation (molal)", b:"a = γm · m"},
+  {f:"Practical activity coefficient (molarity scale)", b:"a = γc · c"},
+  {f:"Rational activity coefficient symbol", b:"γx"},
+  {f:"Rational activity coefficient equation", b:"a = γx · X"},
+  {f:"Activity coefficient with increasing dilution", b:"Approaches unity (1)."},
+  {f:"Activity of the solvent at infinite dilution", b:"a = X1 = 1"},
+  {f:"Activity of a volatile solvent equation", b:"a1 = p1 / p°"},
+  {f:"Activity of water example (sucrose solution)", b:"a = 17.38 / 17.54 = 0.991"},
+  {f:"Activity of water example (drug solution at 100 degC)", b:"a = 721 / 760 = 0.949"},
+  {f:"Ionic strength symbol", b:"μ (also written I)"},
+  {f:"Ionic strength of a mixture of electrolytes", b:"Equal to the sum of the ionic strengths of each individual electrolyte."}
 ];
-let fcOrder = flashcards.map((_,i)=>i);
+
+/* ============ Flash card datasets (Level 2: Medium — 50 cards) ============ */
+const FC_MEDIUM = [
+  {f:"Why do electrolyte solutions show higher-than-predicted osmotic pressure?", b:"Because they dissociate into more than one particle per formula unit, giving more solute particles than a nonelectrolyte at the same molar concentration."},
+  {f:"Meaning of calculated i less than theoretical i", b:"It indicates incomplete dissociation — an association of ions (ion pairs/triplets) reduces the number of free, effective particles."},
+  {f:"Why the activity coefficient curve dips at moderate concentration", b:"Interionic attraction lowers the activity below the true concentration."},
+  {f:"Why the activity coefficient rises again at high concentration (HCl, CaCl2)", b:"Solvation — attraction of water molecules for the ions — reduces interionic attraction and raises the activity coefficient."},
+  {f:"Strong electrolyte: ionized vs dissociated", b:"A strong electrolyte may be completely ionized yet incompletely dissociated into free ions because of electrostatic ion association."},
+  {f:"Why activity is generally less than concentration", b:"Some ions are effectively 'taken out of play' by electrostatic forces of interaction with other ions."},
+  {f:"Molality formula used in the lecture", b:"m = (wt / Mwt) × (1000 / wt of solvent)"},
+  {f:"Molality of 25 g CaCl2 (Mwt = 110.99) in 100 g water", b:"m = (25/110.99) × (1000/100) = 2.25"},
+  {f:"Mole fraction formula for the solvent", b:"X1 = n1 / (n1 + n2)"},
+  {f:"n1 for 100 g of water", b:"n1 = 100/18 = 5.55 mol"},
+  {f:"n2 for 25 g of CaCl2 (Mwt = 110.99)", b:"n2 = 25/110.99 = 0.225 mol"},
+  {f:"X1 for the CaCl2 example", b:"X1 = 5.55 / (5.55 + 0.225) = 0.96"},
+  {f:"ΔP for the CaCl2 vapor pressure example", b:"ΔP = 0.018 × i × p1° × m = 0.018 × 3 × 2.25 × 23.8 = 2.89 mmHg"},
+  {f:"i used for CaCl2", b:"i = 3, since CaCl2 → Ca+2 + 2Cl-1"},
+  {f:"Vapor pressure of the CaCl2 solution (P solution)", b:"P solution = P solvent − ΔP = 23.8 − 2.89 = 20.91 mmHg"},
+  {f:"Activity of water in the CaCl2 solution", b:"a = 20.91 / 23.8 = 0.879"},
+  {f:"Rational activity coefficient (γx1) for the CaCl2 example", b:"γx1 = a / X1 = 0.879 / 0.96 = 0.915"},
+  {f:"Ion concentrations from 0.3 M K2HPO4", b:"[K+] = 0.3 × 2 = 0.6 M, [HPO4 2-] = 0.3 M"},
+  {f:"Ion concentrations from 0.1 M KH2PO4", b:"[K+] = 0.1 M, [H2PO4-] = 0.1 M"},
+  {f:"Ionic strength of 0.010 M KCl", b:"μ = ½[(0.01×1²)+(0.01×1²)] = 0.010"},
+  {f:"Ionic strength of 0.010 M BaSO4", b:"μ = ½[(0.01×2²)+(0.01×2²)] = 0.040"},
+  {f:"Ionic strength of 0.010 M Na2SO4", b:"μ = ½[(0.02×1²)+(0.01×2²)] = 0.030"},
+  {f:"Why BaSO4 has a higher ionic strength than KCl at the same molarity", b:"Because valence is squared in the ionic strength equation, and both ions in BaSO4 carry a charge of 2."},
+  {f:"Total ionic strength of KCl + BaSO4 + Na2SO4 + salicylic acid (all 0.010 M)", b:"μtotal = 0.010 + 0.040 + 0.030 + 0.003 = 0.083"},
+  {f:"Contribution of un-ionized salicylic acid to ionic strength", b:"Essentially none — un-ionized weak acid molecules do not contribute to ionic strength."},
+  {f:"Ionic strength of the phosphate buffer (0.3 M K2HPO4 + 0.1 M KH2PO4)", b:"μ = ½[(0.6×1²)+(0.3×2²)+(0.1×1²)+(0.1×1²)] = 1.0"},
+  {f:"Valence used for HPO4 2- in the buffer calculation", b:"z = 2"},
+  {f:"Valence used for H2PO4- in the buffer calculation", b:"z = 1"},
+  {f:"Why nonelectrolyte solutions can use concentration instead of activity", b:"In dilute nonelectrolyte solutions, electrostatic forces do not cause deviations from ideal behavior, so activity ≈ concentration."},
+  {f:"Why strong electrolytes and buffer systems require activities", b:"Because interionic and electrostatic effects make the effective concentration (activity) differ from the true concentration."},
+  {f:"Relationship between i and colligative properties", b:"i equals the ratio of the observed colligative property of the electrolyte solution to that predicted for a nonelectrolyte of the same concentration."},
+  {f:"Ionization vs dissociation", b:"A substance can be completely ionized (split into ions) while still not being completely dissociated (free of ion pairing/association)."},
+  {f:"Vapor-pressure basis for defining the boiling point", b:"The boiling point is the temperature at which the vapor pressure of the liquid equals the atmospheric pressure."},
+  {f:"Why a1 = 721/760 at 100 degC", b:"Because 760 mmHg is the atmospheric (pure-solvent) vapor pressure at the normal boiling point of water."},
+  {f:"What colligative property is used to find activity of water in the sucrose example", b:"Vapor pressure — the ratio of solution vapor pressure to pure solvent vapor pressure."},
+  {f:"Interpretation of i = 1.9 for 2.0 m NaCl", b:"Slightly less than the theoretical value of 2, showing partial ion association rather than 100% free dissociation."},
+  {f:"Gap between theoretical and real i factor — what it reflects", b:"The degree of interionic association/attraction present at that concentration."},
+  {f:"Effect of increasing concentration on the activity coefficient (initial trend)", b:"It decreases from unity due to growing interionic attraction."},
+  {f:"Effect of very high concentration on activity coefficient (later trend, HCl/CaCl2)", b:"It rises again above the minimum, and can exceed unity, due to solvation of ions."},
+  {f:"Difference between π = iRTc and π = iRTm", b:"The first uses concentration in molarity (c, mol/L); the second uses molality (m, mol/kg solvent)."},
+  {f:"Number of ions K2SO4 dissociates into", b:"3 ions (2 K+ and 1 SO4 2-), giving theoretical i = 3."},
+  {f:"Number of ions CaCl2 dissociates into", b:"3 ions (1 Ca2+ and 2 Cl-), giving theoretical i = 3, same as K2SO4."},
+  {f:"Why FeCl3 has the highest theoretical i among the examples given", b:"Because it dissociates into the most ions — 4 (1 Fe3+ and 3 Cl-)."},
+  {f:"What Table 6-1 / Figure 6-6 plot", b:"The mean activity coefficients of NaCl, CaCl2 and ZnSO4 against the square root of molality."},
+  {f:"General shape of the activity-coefficient vs sqrt(molality) curve", b:"Starts near 1, dips to a minimum, then rises again at higher concentrations for several strong electrolytes."},
+  {f:"Meaning of 'effective concentration'", b:"Another name for activity — the concentration that actually governs the solution's physical/colligative behavior."},
+  {f:"Why is activity equal to concentration only at infinite dilution?", b:"Because at infinite dilution the ions are so widely separated that they no longer interact with one another."},
+  {f:"Practical significance of activity coefficients less than 1", b:"They show that interionic attraction is reducing the effective concentration of the solute below its stated molar/molal value."},
+  {f:"Practical significance of activity coefficients greater than 1", b:"They show that solvation effects are increasing the effective concentration of the solute above its stated value."},
+  {f:"Why buffer ionic strength calculations must include all ionic species", b:"Because μ = ½Σciz i² sums the contribution of every ion in solution, so omitting a species underestimates μ."}
+];
+
+/* ============ Flash card datasets (Level 3: Hard — 40 cards) ============ */
+const FC_HARD = [
+  {f:"Full calculation: osmotic pressure of 2.0 m NaCl at 20 degC", b:"π = iRTc = 1.9 × 0.082 × 293 × 2.0 = 91.3 atm (T converted to Kelvin: 20+273=293)."},
+  {f:"Full calculation: boiling point of 0.250 m FeCl3 (Kb = 0.51 degC/mole)", b:"FeCl3 → Fe3+ + 3Cl-, i=4. ΔTb = iKbm = 4×0.51×0.25 = 0.51 degC. Tb solution = Tb solvent + ΔTb = 100 + 0.51 = 100.51 degC."},
+  {f:"Deriving the real i factor for 2.0 m NaCl from its measured osmotic pressure of 91.3 atm at 20 degC", b:"π = iRTm → 91.3 = i×0.082×(20+273)×2 → i = 91.3/(0.082×293×2) = 1.9, which is less than the theoretical value of 2, showing ion association."},
+  {f:"Full multi-part solution for 25 g CaCl2 in 100 g water at 25 degC (p1° = 23.8 mmHg): find ΔP, activity, and activity coefficient", b:"m=2.25, i=3 → ΔP=0.018×3×2.25×23.8=2.89 mmHg → P solution=23.8−2.89=20.91 mmHg → a=20.91/23.8=0.879 → X1=5.55/(5.55+0.225)=0.96 → γx1=0.879/0.96=0.915."},
+  {f:"Complete breakdown of the mixed-electrolyte ionic strength problem", b:"μKCl=0.010, μBaSO4=0.040, μNa2SO4=0.030, μHSal (un-ionized)=0.003 → μtotal=0.010+0.040+0.030+0.003=0.083."},
+  {f:"Complete breakdown of the phosphate buffer ionic strength calculation", b:"From K2HPO4: [K+]=0.6 (z=1), [HPO4 2-]=0.3 (z=2). From KH2PO4: [K+]=0.1 (z=1), [H2PO4-]=0.1 (z=1). μ=½[(0.6×1)+(0.3×4)+(0.1×1)+(0.1×1)]=½[0.6+1.2+0.1+0.1]=½(2.0)=1.0."},
+  {f:"Why the salicylic-acid ionic-strength example uses [H3O+]=√(Ka·c)", b:"Because salicylic acid is a weak acid; its degree of ionization (and hence the ionic species it contributes) is found from the ionization equilibrium expression, not from its full stated concentration."},
+  {f:"Connecting activity theory to the NaCl osmotic-pressure example", b:"The real i (1.9) is lower than theoretical (2) because ion pairs (Na+Cl-) form at 2.0 m, meaning the true 'effective' ionic concentration (activity) is lower than the analytical concentration — exactly the concept behind the practical activity coefficient γm."},
+  {f:"Why FeCl3's boiling-point elevation calculation assumes complete dissociation (i=4) despite the general warning about ion association", b:"The worked example in the lecture explicitly uses the theoretical i (based on the number of ions from the dissociation equation) rather than a measured/real i, as a simplified teaching calculation."},
+  {f:"Explain, using the lecture's own wording, how a strong electrolyte can be 100% ionized but not 100% dissociated", b:"Because of electrostatic attraction and ion association in concentrated solutions, ions can associate into pairs/triplets even though every molecule has already split into ions — so ionization is complete but free-ion dissociation is not."},
+  {f:"Explain why the activity coefficient curves of NaCl, CaCl2 and ZnSO4 differ in depth of their minima (conceptually, per the lecture's discussion)", b:"The lecture attributes the differences to the differing degree of interionic attraction versus solvation for each electrolyte, both of which depend on the ionic charges and hydration behavior described in the text."},
+  {f:"Using the lecture's activity-coefficient logic, what does a minimum followed by a rise in the curve represent physically?", b:"The minimum marks the concentration where interionic attraction (lowering activity) is exactly balanced against solvation (raising activity); beyond it, solvation of the ions by water dominates and the coefficient rises again."},
+  {f:"Reconcile a = m at infinite dilution with a = γm·m at higher concentration", b:"At infinite dilution γm = 1 so a = m exactly; as concentration rises, interionic attraction makes γm < 1 (or later >1 with solvation), so a diverges from m."},
+  {f:"Why does the lecture use molarity (c) in π=iRTc but molality (m) in π=iRTm, ΔTf=iKfm, ΔTb=iKbm, and Δp=0.018ip1°m?", b:"The lecture presents both forms interchangeably as the 'i factor' relation for colligative properties; osmotic pressure is conventionally expressed per liter of solution (c), whereas the freezing/boiling point and vapor pressure relations in the text are expressed per unit mass of solvent (m)."},
+  {f:"Full derivation of X1 and γx1 for the CaCl2 vapor-pressure example, with every intermediate value", b:"n1(water)=100/18=5.55, n2(CaCl2)=25/110.99=0.225, X1=5.55/5.775=0.96, activity a=0.879, γx1=a/X1=0.879/0.96=0.915."},
+  {f:"Explain why un-ionized salicylic acid contributes almost nothing to ionic strength but ionized KCl, BaSO4, and Na2SO4 contribute fully", b:"Ionic strength depends on ionic charges in solution; un-ionized molecules carry no net charge and are not 'ions', so they are excluded from the μ=½Σciz i² summation, whereas fully dissociated salts contribute every ion they release."},
+  {f:"Compare the theoretical i values of NaCl (2), K2SO4/CaCl2 (3), and FeCl3 (4) with the real i of NaCl (1.9) at 2.0 m — what general conclusion follows?", b:"Even the simplest 1:1 strong electrolyte shows measurable deviation from its theoretical i at moderate-to-high concentration, implying that more highly charged/complex electrolytes would likely show even larger deviations at comparable concentrations due to greater interionic attraction."},
+  {f:"Using the lecture's buffer example, explain why [HPO4 2-] is not doubled the way [K+] is", b:"K2HPO4 releases 2 K+ ions per formula unit but only 1 HPO4 2- ion; so [K+]=2×0.3=0.6 M while [HPO4 2-] stays at 0.3 M, the salt's own molar concentration."},
+  {f:"Show the full boiling-point-elevation logic connecting ΔTb, Tb solution, and Tb solvent for FeCl3", b:"ΔTb = Tb solution − Tb solvent, so 0.51 = Tb solution − 100, giving Tb solution = 100.51 degC, using the pure-water boiling point (100 degC) as the reference solvent value."},
+  {f:"Explain the physical meaning of Δp=0.018 i p1° m in the CaCl2 example, connecting each term to the ΔP=2.89 mmHg result", b:"0.018 converts molality to an approximate mole-fraction-type scale for water, i=3 accounts for CaCl2's three ions, p1°=23.8 mmHg is pure water's vapor pressure, and m=2.25 is the solution's molality; multiplying all four gives the 2.89 mmHg drop in vapor pressure."},
+  {f:"Explain why the lecture's ionic strength formula squares the valence (zi²) rather than using zi directly", b:"Because ionic strength weights each ion's contribution by the square of its charge (μ=½Σciz i²), so more highly charged ions like Ba2+/SO4 2- contribute disproportionately more than singly charged ions at the same molar concentration."},
+  {f:"Predict, from the lecture's data, whether 0.010 M BaSO4 or 0.010 M Na2SO4 has the higher ionic strength, and why", b:"BaSO4 (μ=0.040) is higher than Na2SO4 (μ=0.030), because both ions of BaSO4 carry charge 2, whereas Na2SO4 has singly charged Na+ ions alongside the doubly charged sulfate."},
+  {f:"Trace how activity, activity coefficient, and ionic strength are conceptually linked in the lecture's flow", b:"Activity (effective concentration) diverges from true concentration due to interionic attraction; the activity coefficient quantifies this divergence; ionic strength quantifies the total ionic environment (charge density) responsible for the interionic attraction in the first place."},
+  {f:"Explain, per the lecture, what determines whether a strong electrolyte's activity coefficient will rise again at high concentration", b:"The lecture attributes the rise (seen for HCl and CaCl2) to solvation — strong attraction of water molecules for the ions — which reduces interionic attraction and increases the activity coefficient once concentration is high enough."},
+  {f:"Reconstruct the reasoning that shows i=1.9 (not 2.0) for 2.0 m NaCl indicates association rather than a math error", b:"Because the lecture explicitly states that when the calculated i factor is less than the theoretical i factor, it means there is an association of ions — the lower measured osmotic pressure results from real physical ion pairing, not an arithmetic mistake."},
+  {f:"Full molality calculation, explained step by step, for the CaCl2/water example", b:"m = (wt/Mwt) × (1000/wt of solvent) = (25 g / 110.99 g/mol) × (1000 g / 100 g) = 0.2252 mol × 10 = 2.25 mol/kg."},
+  {f:"Explain why the vapor-pressure-lowering answer (2.89 mmHg) and the resulting solution vapor pressure (20.91 mmHg) must sum back to the pure-solvent value", b:"Because ΔP is defined as P solvent − P solution, so by definition P solution + ΔP = P solvent = 23.8 mmHg, which checks out as 20.91 + 2.89 = 23.8 mmHg."},
+  {f:"Explain how the lecture distinguishes practical activity coefficients (γm, γc) from the rational activity coefficient (γx)", b:"γm and γc relate activity to concentration on the molal and molar scales respectively (a=γm·m, a=γc·c), while γx relates activity to mole fraction (a=γx·X) — three different concentration scales for expressing the same underlying deviation from ideality."},
+  {f:"Using only the lecture's stated facts, explain why activity of the solvent equals 1 at infinite dilution while activity of the solute equals its full concentration at the same limit", b:"At infinite dilution the solution is essentially pure solvent, so X1=1=a for the solvent; simultaneously, since solute ions are so widely separated they don't interact, the solute's activity equals its concentration (a=m), i.e. its practical activity coefficient is also 1."},
+  {f:"Work out the theoretical versus real deviation for the NaCl osmotic pressure example", b:"Theoretical i=2, real i=1.9, a deviation of 0.1 out of 2 — about a 5% reduction from the fully-dissociated theoretical value, attributable to ion association at 2.0 m."},
+  {f:"Explain why the lecture warns that ionic strength must use activities, not raw concentrations, specifically for buffer systems", b:"Buffers combine multiple electrolytes and salts at appreciable concentration, so interionic attraction among all the ionic species present is significant, meaning concentrations alone would overstate the effective (active) ionic behavior."},
+  {f:"Reconstruct why un-ionized weak-acid ionic strength (0.003 for salicylic acid) is calculated from [H3O+]=√(Ka·c) rather than from the acid's full stated concentration", b:"Only the ionized fraction of a weak acid contributes to ionic strength; since a weak acid ionizes only partially, its contribution must be derived from the ionization equilibrium (via Ka) rather than assuming full ionization at its analytical concentration."},
+  {f:"Explain the overall logic connecting π=RTc for nonelectrolytes to π=iRTc for electrolytes, in terms of particle count", b:"π=RTc assumes one mole of solute yields one mole of dissociated particles; electrolytes yield more than one particle per formula unit, so i (approaching the true number of ions) corrects the equation to reflect the larger effective particle concentration."},
+  {f:"What would the theoretical i factor be for a hypothetical salt following the same dissociation pattern as FeCl3, based on the lecture's stated logic for NaCl, K2SO4/CaCl2, and FeCl3?", b:"It would approach 4, because the lecture states i tends toward the number of ions formed upon complete dissociation — the same logic used to assign i=4 specifically to FeCl3 (1 Fe3+ + 3 Cl-)."},
+  {f:"Explain the role of temperature conversion in the NaCl osmotic pressure calculation", b:"T must be in absolute (Kelvin) units for π=iRTc to hold; the lecture converts 20 degC to 293 K before multiplying, since using Celsius directly would give an incorrect (much smaller) pressure."},
+  {f:"Explain why activity coefficients for ZnSO4 stay much lower than those for NaCl at comparable √molality, based on the lecture's interionic-attraction explanation", b:"ZnSO4 involves doubly charged ions (Zn2+ and SO4 2-), producing much stronger interionic (electrostatic) attraction than the singly charged Na+/Cl- pair, so its activity coefficient is pulled down more severely at the same nominal molality."},
+  {f:"Given the lecture's statement that i approaches the number of ions upon dissociation, explain why CaSO4 (like NaCl) has theoretical i=2 despite having doubly charged ions", b:"Because i counts the number of separate ionic species/particles produced (Ca2+ and SO4 2- = 2 particles total), not the magnitude of their charges — charge magnitude instead affects ionic strength and interionic attraction, not the theoretical particle count."},
+  {f:"Summarize, step by step, how the lecture moves from 'electrolyte' to 'ionic strength' as a chain of concepts", b:"Electrolytes ionize in water → strong ones dissociate (mostly) fully, weak ones partially → colligative properties are corrected with i → real i deviates from theoretical due to interionic attraction/ion association → this is formalized via activity and activity coefficients → the overall ionic environment causing this attraction is quantified as ionic strength (μ)."},
+  {f:"For the phosphate buffer, explain why H2PO4- and K+ (from KH2PO4) both use z=1 in the calculation while HPO4 2- uses z=2", b:"Ionic strength uses each ion's actual valence (charge); H2PO4- and K+ each carry a single negative/positive charge (z=1), while HPO4 2- carries two negative charges (z=2), which is why it is squared to 4 in the μ formula (0.3×2²=1.2)."},
+  {f:"Explain how the lecture's Q1(a) and Q1(b) results are internally consistent with each other", b:"Part (a) finds ΔP=2.89 mmHg (vapor-pressure lowering); part (b) uses that same ΔP to get P solution=20.91 mmHg and then activity a=0.879 — so the activity calculation in (b) directly depends on, and must agree with, the lowering computed in (a)."}
+];
+
+/* ============ Flash cards (3 difficulty levels) ============ */
+const flashcardsData = { easy: FC_EASY, medium: FC_MEDIUM, hard: FC_HARD };
+let fcLevel = 'easy';
+let fcOrder = flashcardsData[fcLevel].map((_,i)=>i);
 let fcIndex = 0;
 
 function renderCard(){
-  const card = flashcards[fcOrder[fcIndex]];
+  const deck = flashcardsData[fcLevel];
+  const card = deck[fcOrder[fcIndex]];
   document.getElementById('fcFront').textContent = card.f;
   document.getElementById('fcBack').textContent = card.b;
-  document.getElementById('fcCounter').textContent = (fcIndex+1) + ' / ' + flashcards.length;
+  document.getElementById('fcCounter').textContent = (fcIndex+1) + ' / ' + deck.length;
   document.getElementById('fcCard').classList.remove('flipped');
 }
 document.getElementById('fcCard').addEventListener('click', ()=>{
   document.getElementById('fcCard').classList.toggle('flipped');
 });
 document.getElementById('fcNext').addEventListener('click', ()=>{
-  fcIndex = (fcIndex+1) % flashcards.length; renderCard();
+  const deck = flashcardsData[fcLevel];
+  fcIndex = (fcIndex+1) % deck.length; renderCard();
 });
 document.getElementById('fcPrev').addEventListener('click', ()=>{
-  fcIndex = (fcIndex-1+flashcards.length) % flashcards.length; renderCard();
+  const deck = flashcardsData[fcLevel];
+  fcIndex = (fcIndex-1+deck.length) % deck.length; renderCard();
 });
 document.getElementById('fcShuffle').addEventListener('click', ()=>{
   for(let i=fcOrder.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [fcOrder[i],fcOrder[j]]=[fcOrder[j],fcOrder[i]]; }
   fcIndex = 0; renderCard();
 });
+document.getElementById('fcLevelTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.level-btn');
+  if(!btn) return;
+  fcLevel = btn.dataset.lvl;
+  document.querySelectorAll('#fcLevelTabs .level-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  fcOrder = flashcardsData[fcLevel].map((_,i)=>i);
+  fcIndex = 0;
+  renderCard();
+});
 renderCard();
 
-/* ============ Quiz bank ============ */
-const quizBank = [
-  {q:'What is an electrolyte?', opts:['A substance that forms ions in solution and conducts current','A substance that never dissolves in water','A pure organic compound','A gas that has no charge'], a:0},
-  {q:'A strong electrolyte is one that is:', opts:['Partially ionized','Completely ionized in water','Never ionized','Only ionized in oil'], a:1},
-  {q:'Which of these is a weak electrolyte?', opts:['NaCl','HCl','Acetic acid','NaOH'], a:2},
-  {q:'Which is NOT one of the three classes of strong electrolytes?', opts:['Soluble salts','Strong acids','Weak bases','Strong bases'], a:2},
-  {q:'NH₄OH is an example of a:', opts:['Strong acid','Weak base','Strong base','Soluble salt'], a:1},
-  {q:'During electrolysis, cations move toward the:', opts:['Anode','Cathode','Separator','Salt bridge'], a:1},
-  {q:'Anions discharge their electrons at the:', opts:['Cathode','Anode','Membrane','Battery'], a:1},
-  {q:'Reduction is defined as:', opts:['Removal of electrons','Addition of electrons','Loss of protons','Gain of protons'], a:1},
-  {q:'Oxidation is defined as:', opts:['Addition of electrons','Removal of electrons','Addition of protons','Loss of neutrons'], a:1},
-  {q:'The osmotic pressure equation for a dilute non-electrolyte solution is:', opts:['π = iRTc','π = RTc','π = Kb·m','π = γ·c'], a:1},
-  {q:'The corrected osmotic pressure equation for electrolytes is:', opts:['π = RTc','π = iRTc','π = Kf·m','π = X₁'], a:1},
-  {q:'The van\'t Hoff factor i for a non-electrolyte is approximately:', opts:['0','1','2','4'], a:1},
-  {q:'The theoretical i factor for NaCl approaches:', opts:['1','2','3','4'], a:1},
-  {q:'The theoretical i factor for K₂SO₄ approaches:', opts:['2','3','4','1'], a:1},
-  {q:'The theoretical i factor for FeCl₃ approaches:', opts:['2','3','4','5'], a:2},
-  {q:'For a 2.0 m NaCl solution at 20 °C, the real (calculated) i factor is about:', opts:['1.0','1.9','2.5','3.0'], a:1},
-  {q:'The osmotic pressure of 2.0 m NaCl at 20 °C is approximately:', opts:['45.6 atm','91.3 atm','182.6 atm','9.13 atm'], a:1},
-  {q:'The correct equation for boiling point elevation of an electrolyte is:', opts:['ΔTb = Kb·m','ΔTb = iKbm','ΔTb = iKfm','ΔTb = 0.018ip1°m'], a:1},
-  {q:'The correct equation for freezing point depression of an electrolyte is:', opts:['ΔTf = iKfm','ΔTf = iKbm','ΔTf = RTc','ΔTf = γm'], a:0},
-  {q:'For a 0.250 m FeCl₃ solution, the van\'t Hoff factor i equals:', opts:['2','3','4','1'], a:2},
-  {q:'For 0.250 m FeCl₃ with Kb = 0.51 °C/mole, ΔTb equals:', opts:['0.51 °C','1.02 °C','0.128 °C','2.04 °C'], a:0},
-  {q:'The boiling point of that 0.250 m FeCl₃ solution is:', opts:['100.00 °C','100.51 °C','101.02 °C','99.49 °C'], a:1},
-  {q:'As electrolyte concentration increases, interionic attraction becomes:', opts:['Negligible','Significant','Reversed','Unchanged'], a:1},
-  {q:'Na⁺Cl⁻ existing together at high concentration is an example of a(n):', opts:['Ion triplet','Ion pair','Free ion','Colloid'], a:1},
-  {q:'If the calculated i factor is less than the theoretical i factor, this indicates:', opts:['Complete dissociation','Ion association','No ionization occurred','An error in measurement only'], a:1},
-  {q:'The "effective concentration" of ions in solution is called:', opts:['Molarity','Activity','Normality','Ionic strength'], a:1},
-  {q:'At infinite dilution, the activity of an ion equals its:', opts:['Square root of concentration','Concentration','Valence','Ionic strength'], a:1},
-  {q:'The practical activity coefficient on the molal scale is written as:', opts:['γₓ','γc','γₘ','i'], a:2},
-  {q:'The rational activity coefficient is defined by the equation:', opts:['a = γₘm','a = γcc','a = γₓX','a = iRTc'], a:2},
-  {q:'After passing through a minimum, the activity coefficient of an electrolyte like CaCl₂ tends to:', opts:['Stay at zero','Rise again due to solvation','Fall to a negative value','Remain exactly at the minimum'], a:1},
-  {q:'In the activity-coefficient vs √molality plot, which electrolyte shows the steepest rise at high concentration?', opts:['ZnSO₄','NaCl','CaCl₂','None of them rise'], a:2},
-  {q:'The activity of a volatile solvent is given by:', opts:['a₁ = p₁/p°','a₁ = p°/p₁','a₁ = iRTc','a₁ = Kb·m'], a:0},
-  {q:'Water vapor pressure over a sucrose solution is 17.38 mm vs 17.54 mm pure water; the activity of water is about:', opts:['0.500','0.991','1.009','0.879'], a:1},
-  {q:'If the vapor pressure of water over a drug solution is 721 mmHg at 100 °C (pure water = 760 mmHg), the activity of water is about:', opts:['0.949','1.054','0.500','0.879'], a:0},
-  {q:'The general ionic strength equation is:', opts:['μ = Σcᵢ','μ = ½Σcᵢzᵢ²','μ = iRTc','μ = γₓX'], a:1},
-  {q:'The ionic strength of 0.010 M KCl is:', opts:['0.005','0.010','0.020','0.040'], a:1},
-  {q:'The ionic strength of 0.010 M BaSO₄ is:', opts:['0.010','0.020','0.040','0.080'], a:2},
-  {q:'The ionic strength of 0.010 M Na₂SO₄ is:', opts:['0.010','0.020','0.030','0.060'], a:2},
-  {q:'Un-ionized salicylic acid molecules in solution:', opts:['Double the ionic strength','Contribute almost nothing to ionic strength','Are the main contributor to ionic strength','Cannot exist in water'], a:1},
-  {q:'The total ionic strength of a mixture of several electrolytes equals:', opts:['The average of each μ','The sum of each electrolyte\'s μ','Only the μ of the strongest electrolyte','The product of all μ values'], a:1},
-  {q:'For a buffer of 0.3 M K₂HPO₄ and 0.1 M KH₂PO₄, the calculated ionic strength is:', opts:['0.4','0.7','1.0','1.3'], a:2},
-  {q:'The valence (z) used for HPO₄²⁻ in an ionic strength calculation is:', opts:['1','2','3','0'], a:1}
+/* ============ Quiz bank datasets (Level 1: Easy — 60 questions) ============ */
+const QB_EASY = [
+  {q:"What is an electrolyte?", opts:["A substance that forms ions in solution and conducts current","A gas with no charge","A pure organic solvent","A substance that never dissolves"], a:0},
+  {q:"A strong electrolyte is:", opts:["Never ionized","Completely ionized in water","Partially ionized only in oil","Only ionized under UV light"], a:1},
+  {q:"A weak electrolyte:", opts:["Is completely ionized","Shows a small degree of ionization","Conducts current perfectly","Cannot dissolve in water"], a:1},
+  {q:"Which is a soluble-salt example of a strong electrolyte given in the lecture?", opts:["NaCl","Acetic acid","Ephedrine","Phenobarbital"], a:0},
+  {q:"Which of these is listed as a strong acid example?", opts:["Acetic acid","HCl","NH4OH","Ephedrine"], a:1},
+  {q:"Which of these is listed as a strong base example?", opts:["NaOH","HCl","Acetic acid","Phenobarbital"], a:0},
+  {q:"Which is given as an example of a weak electrolyte drug?", opts:["NaCl","HCl","Phenobarbital","NaOH"], a:2},
+  {q:"Which is the weak acid example given in the lecture?", opts:["HNO3","H2SO4","Acetic acid","HCl"], a:2},
+  {q:"Which is the weak base example given in the lecture?", opts:["NaOH","KOH","NH4OH","Ca(OH)2"], a:2},
+  {q:"Electrolysis occurs when:", opts:["A magnet is placed in solution","A direct electric current flows through an electrolytic cell","A solution is heated to boiling","Light passes through a solution"], a:1},
+  {q:"At the cathode, electrons combine with:", opts:["Anions","Cations","Neutral atoms","Solvent molecules"], a:1},
+  {q:"At the anode, anions:", opts:["Absorb electrons","Discharge electrons","Become neutral before arriving","Repel the current"], a:1},
+  {q:"Reduction is defined as:", opts:["Removal of electrons","Addition of electrons","Loss of protons","Gain of neutrons"], a:1},
+  {q:"Oxidation is defined as:", opts:["Addition of electrons","Removal of electrons","Addition of protons","Loss of neutrons"], a:1},
+  {q:"The current in an electrolyte solution consists of:", opts:["Electron flow through the solvent only","A flow of positive and negative ions toward the electrodes","Photon transmission","Heat transfer"], a:1},
+  {q:"Osmotic pressure is defined as:", opts:["The pressure of a gas above a solution","The minimum pressure to halt solvent flow through a semipermeable membrane","The pressure inside a sealed flask","The vapor pressure of a pure solvent"], a:1},
+  {q:"The osmotic pressure equation for dilute nonelectrolyte solutions is:", opts:["π = iRTc","π = RTc","π = Kb·m","π = γ·c"], a:1},
+  {q:"In π = RTc, R represents:", opts:["Temperature","The gas constant","Concentration","The i factor"], a:1},
+  {q:"In π = RTc, c represents:", opts:["Concentration in moles/liter","Radius","Resistance","Reduction potential"], a:0},
+  {q:"The corrected osmotic pressure equation for electrolyte solutions is:", opts:["π = RTc","π = iRTc","π = Kf·m","π = X1"], a:1},
+  {q:"The i factor for a nonelectrolyte is approximately:", opts:["0","1","2","4"], a:1},
+  {q:"For strong electrolytes, the i factor tends toward:", opts:["Zero","One","The number of ions formed on dissociation","Infinity"], a:2},
+  {q:"The theoretical i factor for NaCl is:", opts:["1","2","3","4"], a:1},
+  {q:"The theoretical i factor for K2SO4 is:", opts:["1","2","3","4"], a:2},
+  {q:"The theoretical i factor for FeCl3 is:", opts:["2","3","4","5"], a:2},
+  {q:"The real (calculated) i factor for 2.0 m NaCl at 20 degC is about:", opts:["1.0","1.9","2.5","3.0"], a:1},
+  {q:"The osmotic pressure of 2.0 m NaCl at 20 degC is approximately:", opts:["45.6 atm","91.3 atm","182.6 atm","9.13 atm"], a:1},
+  {q:"The equation for vapor pressure lowering with the i factor is:", opts:["Δp = 0.018 i p1° m","Δp = RTc","Δp = Kf·m","Δp = γx X"], a:0},
+  {q:"The equation for boiling point elevation of an electrolyte is:", opts:["ΔTb = Kb·m","ΔTb = iKbm","ΔTb = iKfm","ΔTb = 0.018 i p1° m"], a:1},
+  {q:"The equation for freezing point depression of an electrolyte is:", opts:["ΔTf = iKfm","ΔTf = iKbm","ΔTf = RTc","ΔTf = γm"], a:0},
+  {q:"FeCl3 dissociates into:", opts:["Fe+2 and 2Cl-","Fe+3 and 3Cl-","Fe+3 and 2Cl-","Fe+ and Cl-"], a:1},
+  {q:"For the 0.250 m FeCl3 boiling point example, the i factor used is:", opts:["2","3","4","1"], a:2},
+  {q:"For 0.250 m FeCl3 with Kb = 0.51 degC/mole, ΔTb equals:", opts:["0.51 degC","1.02 degC","0.128 degC","2.04 degC"], a:0},
+  {q:"The boiling point of the 0.250 m FeCl3 solution is:", opts:["100.00 degC","100.51 degC","101.02 degC","99.49 degC"], a:1},
+  {q:"As electrolyte concentration increases, interionic attraction becomes:", opts:["Negligible","Significant","Reversed","Unchanged"], a:1},
+  {q:"Na+Cl- existing together at high concentration is an example of a(n):", opts:["Ion triplet","Ion pair","Free ion","Colloid"], a:1},
+  {q:"Na+Cl-Na+ is an example of a(n):", opts:["Ion pair","Ion triplet","Micelle","Colloid"], a:1},
+  {q:"If the calculated i factor is less than the theoretical i factor, this indicates:", opts:["Complete dissociation","Ion association","No ionization occurred","A measurement error only"], a:1},
+  {q:"The 'effective concentration' of ions in solution is called:", opts:["Molarity","Activity","Normality","Ionic strength"], a:1},
+  {q:"At infinite dilution, the activity of an ion equals its:", opts:["Square root of concentration","Concentration","Valence","Ionic strength"], a:1},
+  {q:"The practical activity coefficient on the molal scale is written as:", opts:["γx","γc","γm","i"], a:2},
+  {q:"The practical activity coefficient on the molarity scale is written as:", opts:["γm","γc","γx","a"], a:1},
+  {q:"The rational activity coefficient is defined by the equation:", opts:["a = γm·m","a = γc·c","a = γx·X","a = iRTc"], a:2},
+  {q:"As dilution increases, the activity coefficient approaches:", opts:["0","1","2","Infinity"], a:1},
+  {q:"At infinite dilution, the activity of the solvent equals:", opts:["0","0.5","1","2"], a:2},
+  {q:"The activity of a volatile solvent is given by:", opts:["a1 = p1/p°","a1 = p°/p1","a1 = iRTc","a1 = Kb·m"], a:0},
+  {q:"Water vapor pressure over a sucrose solution is 17.38 mm vs 17.54 mm pure water; the activity of water is about:", opts:["0.500","0.991","1.009","0.879"], a:1},
+  {q:"If the vapor pressure of water over a drug solution is 721 mmHg at 100 degC (pure water = 760 mmHg), the activity of water is about:", opts:["0.949","1.054","0.500","0.879"], a:0},
+  {q:"100 degC is significant because at that temperature, the vapor pressure of water equals:", opts:["0 mmHg","Atmospheric pressure (760 mmHg)","23.8 mmHg","17.54 mmHg"], a:1},
+  {q:"The general ionic strength equation is:", opts:["μ = Σci","μ = ½Σciz i²","μ = iRTc","μ = γx X"], a:1},
+  {q:"In the ionic strength equation, ci represents:", opts:["The valence of an ion","The concentration in moles/liter of an ion","The activity coefficient","The i factor"], a:1},
+  {q:"In the ionic strength equation, zi represents:", opts:["Concentration","Valence of the ion","Ionic radius","Reduction potential"], a:1},
+  {q:"The ionic strength of 0.010 M KCl is:", opts:["0.005","0.010","0.020","0.040"], a:1},
+  {q:"The ionic strength of 0.010 M BaSO4 is:", opts:["0.010","0.020","0.040","0.080"], a:2},
+  {q:"The ionic strength of 0.010 M Na2SO4 is:", opts:["0.010","0.020","0.030","0.060"], a:2},
+  {q:"Un-ionized salicylic acid molecules in solution:", opts:["Double the ionic strength","Contribute almost nothing to ionic strength","Are the main contributor to ionic strength","Cannot exist in water"], a:1},
+  {q:"The total ionic strength of a mixture of several electrolytes equals:", opts:["The average of each μ","The sum of each electrolyte's μ","Only the μ of the strongest electrolyte","The product of all μ values"], a:1},
+  {q:"For a buffer of 0.3 M K2HPO4 and 0.1 M KH2PO4, the calculated ionic strength is:", opts:["0.4","0.7","1.0","1.3"], a:2},
+  {q:"The valence (z) used for HPO4 2- in an ionic strength calculation is:", opts:["1","2","3","0"], a:1},
+  {q:"Which colligative property equation uses molarity (c) rather than molality (m) in the lecture's presentation?", opts:["π = iRTc","ΔTb = iKbm","ΔTf = iKfm","Δp = 0.018 i p1° m"], a:0}
 ];
 
+/* ============ Quiz bank datasets (Level 2: Medium — 50 questions) ============ */
+const QB_MEDIUM = [
+  {q:"Why do strong electrolyte solutions show osmotic pressures two, three, or more times larger than nonelectrolyte solutions of the same molar concentration?", opts:["Because they dissociate into multiple ions, increasing the number of solute particles","Because they are always heated more","Because electrolytes have lower molecular weight","Because water evaporates faster in electrolyte solutions"], a:0},
+  {q:"A calculated i factor lower than the theoretical value most directly indicates:", opts:["The solution is more dilute than stated","Ion association/incomplete dissociation into free ions","The solute is a nonelectrolyte","An error in the gas constant"], a:1},
+  {q:"What is the correct molality for 25 g of CaCl2 (Mwt = 110.99 g/mol) dissolved in 100 g of water?", opts:["0.225","2.25","1.13","22.5"], a:1},
+  {q:"For the CaCl2/water vapor-pressure example, what i value is used and why?", opts:["i = 2, because CaCl2 gives 2 ions","i = 3, because CaCl2 dissociates into Ca2+ and 2Cl-","i = 4, because CaCl2 is doubly charged","i = 1, since no association is assumed"], a:1},
+  {q:"Using Δp = 0.018 i p1° m with i=3, p1°=23.8 mmHg, m=2.25, the vapor pressure lowering is closest to:", opts:["1.45 mmHg","2.89 mmHg","5.78 mmHg","0.96 mmHg"], a:1},
+  {q:"Given ΔP = 2.89 mmHg and pure water p1° = 23.8 mmHg, the vapor pressure of the CaCl2 solution is:", opts:["26.69 mmHg","20.91 mmHg","23.80 mmHg","17.38 mmHg"], a:1},
+  {q:"The activity of water in that CaCl2 solution (P solution = 20.91 mmHg) is approximately:", opts:["0.500","0.879","0.991","1.021"], a:1},
+  {q:"For the same CaCl2 example, X1 (mole fraction of water) is calculated as:", opts:["n2/(n1+n2)","n1/(n1+n2)","n1×n2","n1-n2"], a:1},
+  {q:"With n1 = 5.55 mol water and n2 = 0.225 mol CaCl2, X1 equals approximately:", opts:["0.04","0.50","0.96","1.20"], a:2},
+  {q:"The rational activity coefficient γx1 for the CaCl2 example (a=0.879, X1=0.96) is approximately:", opts:["0.750","0.845","0.915","1.090"], a:2},
+  {q:"Why does the activity-coefficient curve for CaCl2 rise again after an initial dip at higher concentrations?", opts:["Because CaCl2 becomes a nonelectrolyte at high concentration","Because solvation of the ions by water reduces interionic attraction","Because the temperature automatically increases","Because ionic strength drops to zero"], a:1},
+  {q:"A strong electrolyte can be completely ionized yet incompletely dissociated. This is best explained by:", opts:["Some molecules never split into ions at all","Ions, once formed, can still associate into pairs or triplets due to electrostatic attraction","The solvent absorbs excess ions","Electrolysis destroys some ions"], a:1},
+  {q:"Why is 'activity' generally less than the actual concentration of a solute in a real electrolyte solution?", opts:["Because some solvent evaporates","Because some ions are effectively taken out of play by electrostatic interactions","Because activity is always measured at a lower temperature","Because activity ignores water content"], a:1},
+  {q:"For 0.010 M KCl, why is the ionic strength numerically equal to the molar concentration itself?", opts:["Because KCl doesn't dissociate","Because both K+ and Cl- carry a valence of 1, so z² = 1 for each","Because KCl is a weak electrolyte","Because ionic strength always equals molarity"], a:1},
+  {q:"Why is the ionic strength of 0.010 M BaSO4 (0.040) higher than that of 0.010 M KCl (0.010) at the same molarity?", opts:["BaSO4 has more moles of ions","Both ions of BaSO4 carry a valence of 2, and valence is squared in the formula","BaSO4 is less soluble","KCl has a lower molecular weight"], a:1},
+  {q:"For 0.010 M Na2SO4, why is [Na+] taken as 0.020 M rather than 0.010 M in the ionic strength calculation?", opts:["Because Na2SO4 releases 2 Na+ ions per formula unit","Because sodium is doubly charged","Because SO4 2- doubles the sodium concentration by attraction","Because 0.010 M refers only to sulfate"], a:0},
+  {q:"In the phosphate buffer example, why is [K+] from K2HPO4 taken as 0.6 M when the salt concentration is 0.3 M?", opts:["Because K+ has valence 2","Because K2HPO4 releases 2 K+ ions per formula unit","Because of a calculation error in the source","Because K+ combines with H2PO4- as well"], a:1},
+  {q:"What is the total ionic strength of a solution containing 0.010 M KCl, 0.010 M BaSO4, 0.010 M Na2SO4, and 0.010 M salicylic acid together?", opts:["0.070","0.080","0.083","0.093"], a:2},
+  {q:"Why does un-ionized salicylic acid contribute almost nothing to the total ionic strength of the mixture?", opts:["It is a strong acid","Only ionic (charged) species contribute to ionic strength, and most of the weak acid remains un-ionized","Salicylic acid neutralizes the other ions","It precipitates out of solution"], a:1},
+  {q:"Calculate the ionic strength of a buffer containing 0.3 M K2HPO4 and 0.1 M KH2PO4.", opts:["0.5","0.7","1.0","1.3"], a:2},
+  {q:"In that buffer calculation, why does the HPO4 2- term contribute 0.3×2² rather than 0.3×2?", opts:["Because the ionic strength formula squares the valence of each ion","Because HPO4 2- reacts twice with water","Because the concentration must be doubled first","Because of a typographical convention only"], a:0},
+  {q:"Which pair of electrolytes share the same theoretical i factor according to the lecture?", opts:["NaCl and FeCl3","K2SO4 and CaCl2","NaCl and K2SO4","CaSO4 and FeCl3"], a:1},
+  {q:"Which best explains why the real i factor for 2.0 m NaCl (1.9) is slightly below its theoretical value (2)?", opts:["NaCl is actually a weak electrolyte","At 2.0 m, some Na+ and Cl- ions associate into ion pairs rather than remaining fully free","The equation π=iRTc is invalid for salts","Osmotic pressure cannot be measured accurately for salts"], a:1},
+  {q:"According to the lecture, dilute solutions of nonelectrolytes can generally use concentration instead of activity because:", opts:["They have no ions at all","Electrostatic forces do not cause significant deviation from ideal behavior in these solutions","Nonelectrolytes are always more concentrated","Activity only applies to gases"], a:1},
+  {q:"Why does the lecture stress using activities (not concentrations) for buffer systems specifically?", opts:["Buffers contain multiple electrolytes/salts, so interionic effects are significant","Buffers are always extremely dilute","Buffers never contain ions","Activities are easier to measure experimentally"], a:0},
+  {q:"For the sucrose vapor-pressure example (17.38 mm vs 17.54 mm), what does the resulting activity value (0.991) indicate?", opts:["The water is almost fully 'active' as if it were pure solvent","The solution has no water at all","The sucrose has completely dissociated","The solution has boiled"], a:0},
+  {q:"Why is a1 = 721/760 used (rather than 721/23.8) for the drug-solution example at 100 degC?", opts:["Because at the normal boiling point, pure water's vapor pressure equals 760 mmHg (atmospheric pressure), not 23.8 mmHg (its value at 25 degC)","Because 23.8 mmHg is a typo","Because activity must always be referenced to 760 mmHg","Because 100 degC solutions always use 760 mmHg regardless of substance"], a:0},
+  {q:"Which statement correctly relates the practical activity coefficients γm and γc?", opts:["γm is used with molality (a=γm·m); γc is used with molarity (a=γc·c)","γm and γc are identical in all cases","γc applies only to solvents","γm applies only to gases"], a:0},
+  {q:"The rational activity coefficient γx differs from γm and γc because it is defined relative to:", opts:["Mole fraction (X)","Molarity (c)","Molality (m)","Ionic strength (μ)"], a:0},
+  {q:"Based on the lecture's trend for NaCl, CaCl2, and ZnSO4 activity coefficients plotted vs √molality, which best describes the general pattern?", opts:["A steady straight-line increase","A decrease toward a minimum, then a rise for some electrolytes at higher concentration","A constant value of 1 throughout","An immediate drop to zero"], a:1},
+  {q:"If a strong electrolyte's activity coefficient is less than 1 at moderate concentration, this is attributed mainly to:", opts:["Solvation of ions by water","Interionic (electrostatic) attraction between oppositely charged ions","Chemical decomposition of the solute","Evaporation of solvent"], a:1},
+  {q:"If an electrolyte's activity coefficient rises above 1 at very high concentration (as with HCl and CaCl2 in the text), this is mainly attributed to:", opts:["Loss of solute mass","Attraction of water molecules for the ions (solvation), which reduces interionic attraction","A drop in ionic strength to zero","The solute becoming a nonelectrolyte"], a:1},
+  {q:"Osmotic pressure π = iRTm and boiling point elevation ΔTb = iKbm share which common feature?", opts:["Both use the i factor and molality (m) to correct for electrolyte dissociation","Both ignore the identity of the solute","Both require the solute to be a nonelectrolyte","Neither depends on concentration"], a:0},
+  {q:"For 0.250 m FeCl3, why is i taken as 4 rather than the real (measured) i factor in that worked example?", opts:["Because FeCl3 does not dissociate","Because the example illustrates the theoretical calculation based on the number of ions from the dissociation equation","Because Kb requires i=4 by definition","Because FeCl3 is a nonelectrolyte"], a:1},
+  {q:"Which of these correctly ranks the theoretical i values from lowest to highest, based on the lecture?", opts:["FeCl3 < K2SO4/CaCl2 < NaCl","NaCl < K2SO4/CaCl2 < FeCl3","K2SO4/CaCl2 < NaCl < FeCl3","NaCl = K2SO4/CaCl2 = FeCl3"], a:1},
+  {q:"Why does the ionic strength formula use ½ in front of the summation (μ = ½Σciz i²)?", opts:["To average across only two ions","It is part of the standard definition given in the lecture for combining all ionic contributions","To convert molarity into molality","To correct for temperature"], a:1},
+  {q:"In the ionic-strength worked examples, which quantity must be identified separately for each distinct ionic species before summing?", opts:["Only the salt's overall molarity","Each ion's own concentration (ci) and valence (zi)","Only the solvent's molality","Only the pH of the solution"], a:1},
+  {q:"Which of the following would NOT need its activity distinguished from its concentration, according to the lecture?", opts:["A concentrated strong electrolyte","A buffer system with multiple salts","A dilute nonelectrolyte solution like dilute sucrose","A concentrated weak electrolyte solution with salts present"], a:2},
+  {q:"What conceptual link does the lecture draw between i, activity, and ionic strength?", opts:["They are unrelated concepts introduced independently","All three arise from interionic/electrostatic interactions that make electrolyte solutions deviate from ideal (nonelectrolyte-like) behavior","Only i and activity are related; ionic strength is a separate unrelated topic","Ionic strength replaces the need for the i factor entirely"], a:1},
+  {q:"For a solution containing 0.010 M Na2SO4, which ionic concentrations feed into the ionic strength calculation?", opts:["[Na+]=0.010, [SO4 2-]=0.010","[Na+]=0.020, [SO4 2-]=0.010","[Na+]=0.010, [SO4 2-]=0.020","[Na+]=0.030, [SO4 2-]=0.010"], a:1},
+  {q:"Which best explains why BaSO4's ionic strength (0.040) is higher than Na2SO4's (0.030) at the same 0.010 M concentration?", opts:["BaSO4 dissolves more completely","In BaSO4 both ions carry valence 2, squared to 4 each, while Na2SO4 has one ion at valence 1","BaSO4 has a lower molecular weight","Na2SO4 does not dissociate at all"], a:1},
+  {q:"If you were told a solution's real i factor exceeded its theoretical i factor, this would be unusual because it would suggest:", opts:["More effective particles in solution than the number of ions from complete dissociation, which is not the typical association-driven deviation described in the lecture","The solute is not an electrolyte","The measurement is in Celsius instead of Kelvin","The gas constant was used incorrectly"], a:0},
+  {q:"Which factor determines the magnitude of a solute's contribution to ionic strength most strongly, according to μ = ½Σciz i²?", opts:["Its molecular weight","Its valence (charge), since it enters the formula squared","Its color in solution","Its boiling point"], a:1},
+  {q:"A weak electrolyte like salicylic acid contributes less to ionic strength per mole of stated concentration than a strong electrolyte like KCl mainly because:", opts:["Salicylic acid has a much smaller molecular weight","Only the ionized fraction of the weak acid produces charged species, and that fraction is small","Salicylic acid is insoluble in water","KCl has a negative valence"], a:1},
+  {q:"Which of the following pairs correctly matches an equation to the property it describes?", opts:["ΔTf = iKfm — freezing point depression","a1 = p1/p° — ionic strength","μ = ½Σciz i² — boiling point elevation","π = RTc — activity of the solvent"], a:0},
+  {q:"For the CaCl2 vapor pressure example, what does the final γx1 value of about 0.915 (less than 1) indicate about the solvent's behavior?", opts:["The solvent's activity is somewhat less than its mole fraction would predict, consistent with nonideal solution behavior","The solvent has completely evaporated","The solute has become a nonelectrolyte","There is no interaction between solute and solvent"], a:0},
+  {q:"Which two colligative-property equations in the lecture explicitly include the term p1° (or p°), the pure solvent's vapor pressure?", opts:["ΔTb=iKbm and ΔTf=iKfm","Δp=0.018 i p1° m and a1=p1/p°","π=iRTc and π=iRTm","μ=½Σciz i² and a=γm m"], a:1},
+  {q:"If a strong electrolyte's calculated i factor from experimental osmotic pressure data matches its theoretical i factor exactly, what would this suggest about the solution?", opts:["Negligible ion association/interionic attraction at that concentration","The solute is actually a weak electrolyte","The solvent is not water","The temperature reading is wrong"], a:0},
+  {q:"Which single factor explains both why real i < theoretical i for concentrated NaCl, and why activity < concentration in general?", opts:["Interionic (electrostatic) attraction between ions reducing their effective, freely-acting concentration","Evaporation of the solvent","Chemical decomposition of the solute over time","Random measurement error"], a:0},
+  {q:"In comparing π=iRTc for NaCl (i≈1.9 at 2.0 m) to the ideal case of i=2, which best summarizes the practical implication for pharmaceutical calculations?", opts:["Using the theoretical i (2) instead of the real i (1.9) will overestimate the true colligative effect at that concentration","Using the theoretical i always underestimates the colligative effect","There is no practical difference between theoretical and real i at any concentration","Real i values only matter for nonelectrolytes"], a:0}
+];
+
+/* ============ Quiz bank datasets (Level 3: Hard — 40 questions) ============ */
+const QB_HARD = [
+  {q:"Calculate π for 2.0 m NaCl at 20 degC given i=1.9, R=0.082, using π=iRTc. Which value results?", opts:["45.6 atm","91.3 atm","136.9 atm","182.6 atm"], a:1},
+  {q:"For 0.250 m FeCl3 (Kb=0.51 degC/mole, i=4), what is Tb of the solution given pure water boils at 100 degC?", opts:["100.128 degC","100.51 degC","101.02 degC","102.04 degC"], a:1},
+  {q:"Given π=91.3 atm measured for 2.0 m NaCl at 20 degC, solving π=iRTm for i (R=0.082, T=293 K) yields approximately:", opts:["1.5","1.9","2.0","2.4"], a:1},
+  {q:"For 25 g CaCl2 (Mwt=110.99) in 100 g water at 25 degC (p1°=23.8 mmHg), which sequence of results is correct (m, ΔP, P solution, activity)?", opts:["m=2.25, ΔP=2.89 mmHg, P solution=20.91 mmHg, a=0.879","m=1.13, ΔP=1.45 mmHg, P solution=22.35 mmHg, a=0.939","m=2.25, ΔP=5.78 mmHg, P solution=18.02 mmHg, a=0.757","m=0.225, ΔP=0.29 mmHg, P solution=23.51 mmHg, a=0.988"], a:0},
+  {q:"For the same CaCl2 example, with n1=5.55 mol water and n2=0.225 mol CaCl2, what is γx1 given activity a=0.879?", opts:["0.845","0.879","0.915","0.960"], a:2},
+  {q:"What is the total ionic strength of a mixture containing 0.010 M each of KCl, BaSO4, Na2SO4, and salicylic acid?", opts:["0.070","0.080","0.083","0.093"], a:2},
+  {q:"Which combination of individual ionic strengths sums to the mixture total of 0.083 in the lecture's example?", opts:["0.010 (KCl) + 0.040 (BaSO4) + 0.030 (Na2SO4) + 0.003 (salicylic acid)","0.020 (KCl) + 0.030 (BaSO4) + 0.020 (Na2SO4) + 0.013 (salicylic acid)","0.005 (KCl) + 0.050 (BaSO4) + 0.025 (Na2SO4) + 0.003 (salicylic acid)","0.010 (KCl) + 0.020 (BaSO4) + 0.040 (Na2SO4) + 0.013 (salicylic acid)"], a:0},
+  {q:"For the phosphate buffer (0.3 M K2HPO4 + 0.1 M KH2PO4), which correctly lists all four ionic contributions used to reach μ=1.0?", opts:["[K+]=0.6(z=1), [HPO4 2-]=0.3(z=2), [K+]=0.1(z=1), [H2PO4-]=0.1(z=1)","[K+]=0.3(z=1), [HPO4 2-]=0.6(z=2), [K+]=0.1(z=1), [H2PO4-]=0.1(z=1)","[K+]=0.6(z=2), [HPO4 2-]=0.3(z=1), [K+]=0.1(z=1), [H2PO4-]=0.1(z=1)","[K+]=0.6(z=1), [HPO4 2-]=0.3(z=1), [K+]=0.1(z=2), [H2PO4-]=0.1(z=1)"], a:0},
+  {q:"Which numeric substitution correctly reproduces μ=1.0 for the phosphate buffer?", opts:["½[(0.6×1)+(0.3×4)+(0.1×1)+(0.1×1)] = 1.0","½[(0.3×1)+(0.6×4)+(0.1×1)+(0.1×1)] = 1.15","½[(0.6×1)+(0.3×2)+(0.1×1)+(0.1×1)] = 0.9","½[(0.6×2)+(0.3×4)+(0.1×2)+(0.1×2)] = 1.7"], a:0},
+  {q:"If the calculated i factor for 2.0 m NaCl (1.9) is compared to its theoretical value (2), the percentage deviation is closest to:", opts:["1%","5%","10%","20%"], a:1},
+  {q:"Which statement best integrates the lecture's explanation of why real i < theoretical i specifically for NaCl at 2.0 m?", opts:["NaCl only partially ionizes into Na+ and Cl-","Ion pairs (Na+Cl-) form at this concentration, lowering the number of free, osmotically-active particles below the fully-dissociated theoretical count","The gas constant differs for salts","Osmotic pressure formulas do not apply to 1:1 salts"], a:1},
+  {q:"Based on the lecture's reasoning, which electrolyte among NaCl, K2SO4, CaCl2, and FeCl3 would be theoretically expected to show the largest osmotic pressure at equal molal concentration, assuming ideal (theoretical) dissociation?", opts:["NaCl","K2SO4","CaCl2","FeCl3"], a:3},
+  {q:"In the ionic-strength formula μ=½Σciz i², if an ion's concentration is doubled while its valence stays the same, its individual contribution to μ:", opts:["Stays the same","Doubles","Quadruples","Is halved"], a:1},
+  {q:"In the same formula, if an ion's valence is doubled while its concentration stays the same, its individual contribution to μ:", opts:["Stays the same","Doubles","Quadruples","Is halved"], a:2},
+  {q:"Applying the previous two rules together, if Ba2+ (z=2) is compared to Na+ (z=1) at the same molar concentration, Ba2+ contributes how many times more to ionic strength?", opts:["Equal contribution","2 times more","4 times more","8 times more"], a:2},
+  {q:"For 0.010 M BaSO4, both ions have z=2. Using μ=½[(c1z1²)+(c2z2²)], the correct substitution is:", opts:["½[(0.01×1)+(0.01×1)] = 0.010","½[(0.01×4)+(0.01×4)] = 0.040","½[(0.01×2)+(0.01×2)] = 0.020","½[(0.02×4)+(0.02×4)] = 0.080"], a:1},
+  {q:"For 0.010 M Na2SO4, with [Na+]=0.020 M (z=1) and [SO4 2-]=0.010 M (z=2), the correct substitution is:", opts:["½[(0.02×1)+(0.01×4)] = 0.030","½[(0.01×1)+(0.02×4)] = 0.045","½[(0.02×4)+(0.01×1)] = 0.045","½[(0.01×1)+(0.01×4)] = 0.025"], a:0},
+  {q:"The lecture states the ionic strength of 0.010 M salicylic acid is 0.003, derived from [H3O+]=√(Ka·c). Using the values shown in the source (Ka=0.001), the calculation shown is:", opts:["√(0.001×0.1)=0.003","√(0.001×0.01)=0.0032","√(0.0001×0.1)=0.0032","√(0.001×1.0)=0.0316"], a:0},
+  {q:"Why does the ionic-strength contribution of salicylic acid use its ionized concentration (via Ka) rather than its full 0.010 M value?", opts:["Because it is a weak electrolyte that only partially ionizes, so only the ionized (charged) fraction contributes to μ","Because salicylic acid is insoluble","Because Ka always equals the total concentration","Because weak acids never contribute to ionic strength under any circumstance"], a:0},
+  {q:"Consider the CaCl2 vapor-pressure problem. If instead 'no association of ions' were NOT assumed and the real i were somewhat less than 3, how would ΔP compare to the reported 2.89 mmHg?", opts:["ΔP would be smaller than 2.89 mmHg","ΔP would be exactly 2.89 mmHg regardless","ΔP would be larger than 2.89 mmHg","ΔP cannot be estimated without new data of any kind"], a:0},
+  {q:"For the same CaCl2 example, which correctly shows the mole-number calculations?", opts:["n1=100/18=5.55; n2=25/110.99=0.225","n1=18/100=0.18; n2=110.99/25=4.44","n1=100/110.99=0.90; n2=25/18=1.39","n1=1000/18=55.5; n2=25/110.99=0.225"], a:0},
+  {q:"Which value represents X1 (mole fraction of water) using n1=5.55 and n2=0.225?", opts:["0.039","0.960","0.500","1.225"], a:1},
+  {q:"Dividing the water activity (0.879) by X1 (0.96) for the CaCl2 example gives γx1 of approximately:", opts:["0.845","0.915","0.960","1.045"], a:1},
+  {q:"Which single change to the CaCl2 example's input (Mwt, mass, or i) would increase the calculated molality m, all else equal?", opts:["Increasing the mass of water used","Increasing the mass of CaCl2 dissolved","Decreasing i from 3 to 2","Increasing Mwt of CaCl2"], a:1},
+  {q:"If i were mistakenly taken as 2 instead of 3 for the CaCl2 vapor-pressure example, the calculated ΔP would be:", opts:["Unchanged","Two-thirds of the correct value (about 1.93 mmHg)","Exactly zero","One and a half times larger"], a:1},
+  {q:"Which of the following most accurately restates the lecture's logic for why the real i of NaCl (1.9) is closer to its theoretical value (2) than a more highly-charged salt's real i would likely be to its own theoretical value?", opts:["Singly charged ions (Na+, Cl-) experience weaker interionic attraction than more highly charged ions, so they deviate less from ideal, fully-dissociated behavior at a given molal concentration","Triply charged salts always have lower theoretical i values","NaCl is a nonelectrolyte, so it has no deviation at all","Deviation size is unrelated to ionic charge according to the lecture"], a:0},
+  {q:"For the boiling-point example (0.250 m FeCl3), what would ΔTb become if the solute concentration were doubled to 0.500 m while i and Kb stayed the same?", opts:["0.51 degC (unchanged)","1.02 degC","0.255 degC","2.04 degC"], a:1},
+  {q:"Using ΔTb=iKbm, if i were the real (association-affected) value rather than the theoretical i=4 for FeCl3, the true ΔTb would most likely be:", opts:["Exactly the same as calculated with i=4","Somewhat smaller than the value calculated with i=4, due to ion association reducing the effective particle count","Somewhat larger than the value calculated with i=4","Impossible to estimate in principle"], a:1},
+  {q:"Which correctly lists, from the source, the sequence of steps used to move from raw mass data to activity coefficient in the CaCl2 vapor-pressure problem?", opts:["Molality → ΔP (vapor pressure lowering) → P solution → activity (a=p1/p°) → mole fraction (X1) → γx1=a/X1","Molality → activity → ΔP → mole fraction → P solution → γx1","P solution → molality → mole fraction → ΔP → activity → γx1","Mole fraction → molality → γx1 → activity → ΔP → P solution"], a:0},
+  {q:"For the mixture ionic-strength problem, if the salicylic acid concentration were doubled to 0.020 M (with Ka unchanged), which is the most defensible expectation based on [H3O+]=√(Ka·c)?", opts:["Its ionic-strength contribution would exactly double","Its ionic-strength contribution would increase, but by less than double, since [H3O+] scales with the square root of concentration","Its ionic-strength contribution would stay exactly the same","Its ionic-strength contribution would decrease"], a:1},
+  {q:"Which best explains why theoretical i values (2, 3, 4) are assigned strictly by counting ions from the dissociation equation, while the ionic strength formula additionally squares each ion's valence?", opts:["The two quantities answer different questions: i tracks the number of separate particles for colligative-property purposes, while ionic strength tracks the electrostatic (charge-based) environment, which depends on charge squared, not particle count","They are actually the same calculation performed twice","Ionic strength ignores valence entirely","Theoretical i also squares valence"], a:0},
+  {q:"For a hypothetical strong electrolyte with theoretical i=3 (like K2SO4 or CaCl2), if its measured osmotic pressure at a given molality gave a real i of 2.7, what would this most directly suggest?", opts:["About 90% of the ideal, fully-dissociated colligative effect is being observed, consistent with some ion association","The solute did not dissolve at all","The solute is behaving as a nonelectrolyte","The temperature must have been recorded incorrectly"], a:0},
+  {q:"Which of the following would most likely produce the LARGEST activity coefficient deviation from 1 at a given molality, based on the ionic-strength/interionic-attraction reasoning in the lecture?", opts:["A 1:1 electrolyte like NaCl","A 1:2 electrolyte like Na2SO4","A 2:2 electrolyte like ZnSO4 or BaSO4","A nonelectrolyte like sucrose"], a:2},
+  {q:"In the buffer ionic-strength example, if the concentration of KH2PO4 were increased from 0.1 M to 0.2 M (K2HPO4 unchanged at 0.3 M), the new ionic strength would be:", opts:["1.0 (unchanged)","1.1","1.2","0.9"], a:1},
+  {q:"Using the CaCl2 example's numbers, what is ΔP expressed as a fraction/percentage of the pure solvent's vapor pressure p1°=23.8 mmHg?", opts:["About 2% of p1°","About 12% of p1°","About 25% of p1°","About 50% of p1°"], a:1},
+  {q:"Which of these best captures why the lecture presents both π=iRTc (using molarity) and π=iRTm/ΔTb=iKbm/ΔTf=iKfm/Δp=0.018ip1°m (using molality) as valid forms of the same corrected colligative-property concept?", opts:["They are entirely different physical laws with no shared basis","All are variations of the same i-factor correction, differing only in whether solute amount is expressed per liter of solution (c) or per kg of solvent (m)","Molarity-based equations only apply to gases","Molality-based equations only apply to nonelectrolytes"], a:1},
+  {q:"If the real i factor exactly equalled the theoretical i factor for a given electrolyte at a stated concentration, what would this imply, per the lecture's own framework, about interionic attraction and activity at that concentration?", opts:["Interionic attraction is negligible there, and activity is essentially equal to concentration (activity coefficient ≈ 1)","Interionic attraction is at its maximum","Activity is undefined in that case","The electrolyte must be a nonelectrolyte"], a:0},
+  {q:"For the sucrose vapor-pressure example, which underlying assumption allows a1=p1/p° to be used directly without an i-factor correction?", opts:["Sucrose is a nonelectrolyte, so no dissociation-related correction is needed","Sucrose always behaves like a strong electrolyte","The i-factor only applies to boiling point, not vapor pressure","p1/p° is unrelated to solute identity"], a:0},
+  {q:"Which two worked examples in the lecture both ultimately depend on knowing the pure solvent's reference vapor pressure (p° or p1°) to complete the calculation?", opts:["The sucrose activity example and the CaCl2 vapor-pressure/activity example","The FeCl3 boiling point example and the KCl ionic strength example","The NaCl osmotic pressure example and the buffer ionic strength example","The BaSO4 ionic strength example and the Na2SO4 ionic strength example"], a:0},
+  {q:"Taking the lecture's full progression together (electrolyte classification → i factor → interionic attraction → activity/activity coefficients → ionic strength), which best states the unifying theme connecting all these topics?", opts:["Real electrolyte solutions deviate from simple, ideal (nonelectrolyte-like) behavior because of interactions between ions, and each concept (i, activity, ionic strength) is a different way of quantifying or correcting for that deviation","Each topic is unrelated and exists only as a separate exam topic","Only strong electrolytes are discussed; weak electrolytes are irrelevant to all these concepts","Ionic strength replaces the need for considering activity or i factor at all"], a:0}
+];
+
+const quizBankData = { easy: QB_EASY, medium: QB_MEDIUM, hard: QB_HARD };
+let quizLevel = 'easy';
 let quizState = [];
 
 function shuffleArray(arr){
@@ -911,9 +1200,10 @@ function shuffleArray(arr){
 }
 
 function buildQuiz(){
-  const order = shuffleArray(quizBank.map((_,i)=>i));
+  const bank = quizBankData[quizLevel];
+  const order = shuffleArray(bank.map((_,i)=>i));
   quizState = order.map(idx=>{
-    const item = quizBank[idx];
+    const item = bank[idx];
     const optIdx = shuffleArray(item.opts.map((_,i)=>i));
     const options = optIdx.map(i=>item.opts[i]);
     const correct = optIdx.indexOf(item.a);
@@ -975,6 +1265,14 @@ document.getElementById('gradeQuiz').addEventListener('click', ()=>{
   updateScorePill();
 });
 document.getElementById('retryQuiz').addEventListener('click', buildQuiz);
+document.getElementById('quizLevelTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.level-btn');
+  if(!btn) return;
+  quizLevel = btn.dataset.lvl;
+  document.querySelectorAll('#quizLevelTabs .level-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildQuiz();
+});
 buildQuiz();
 </script>
 </body>
